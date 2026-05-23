@@ -81,7 +81,7 @@ export function estimateMessageTokens(msg: ProviderMessage): number {
   if (typeof msg.content === 'string') {
     tokens += estimateTokenCount(msg.content);
   }
-  if (msg.tool_calls) {
+  if ('tool_calls' in msg && msg.tool_calls) {
     for (const tc of msg.tool_calls) {
       tokens += estimateTokenCount(tc.function.name);
       tokens += estimateTokenCount(tc.function.arguments);

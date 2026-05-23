@@ -40,7 +40,7 @@ export const nodeReplTool = {
     (context as Record<string, unknown>).__output = output;
 
     try {
-      const script = new vm.Script(code, { filename: 'repl.js', timeout: 30000 });
+      const script = new vm.Script(code, { filename: 'repl.js' });
       const result = script.runInContext(context, { timeout: 30000 });
 
       let resultStr = '';

@@ -71,7 +71,7 @@ export class ConfigManager {
     try {
       const content = fs.readFileSync(this.configPath, 'utf-8');
       const saved = JSON.parse(content);
-      return deepMerge(DEFAULT_CONFIG, saved);
+      return deepMerge(DEFAULT_CONFIG as unknown as Record<string, unknown>, saved) as unknown as AideConfig;
     } catch {
       return { ...DEFAULT_CONFIG };
     }
@@ -89,7 +89,7 @@ export class ConfigManager {
   }
 
   set(partial: DeepPartial<AideConfig>): void {
-    this.config = deepMerge(this.config, partial as Record<string, unknown>) as AideConfig;
+    this.config = deepMerge(this.config as unknown as Record<string, unknown>, partial as unknown as Record<string, unknown>) as unknown as AideConfig;
     this.save();
   }
 

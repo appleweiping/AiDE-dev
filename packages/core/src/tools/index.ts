@@ -30,6 +30,21 @@ import { powershellTool } from './powershell.js';
 import { nodeReplTool } from './node-repl.js';
 import { cronTool } from './cron.js';
 import { askUserTool } from './ask-user.js';
+import type { RegisteredTool, ToolResult } from './registry.js';
+
+function wrapTool(tool: { definition: any; execute: (...args: any[]) => Promise<string> }): RegisteredTool {
+  return {
+    definition: tool.definition,
+    handler: async (args: Record<string, unknown>): Promise<ToolResult> => {
+      try {
+        const output = await tool.execute(args);
+        return { output, isError: false };
+      } catch (err) {
+        return { output: `Error: ${(err as Error).message}`, isError: true };
+      }
+    },
+  };
+}
 
 export function registerBuiltinTools(): void {
   toolRegistry.registerTool(fileReadTool);
@@ -38,35 +53,35 @@ export function registerBuiltinTools(): void {
   toolRegistry.registerTool(bashTool);
   toolRegistry.registerTool(globTool);
   toolRegistry.registerTool(grepTool);
-  toolRegistry.registerTool(webSearchTool);
-  toolRegistry.registerTool(webFetchTool);
-  toolRegistry.registerTool(notebookEditTool);
-  toolRegistry.registerTool(monitorTool);
+  toolRegistry.registerTool(wrapTool(webSearchTool));
+  toolRegistry.registerTool(wrapTool(webFetchTool));
+  toolRegistry.registerTool(wrapTool(notebookEditTool));
+  toolRegistry.registerTool(wrapTool(monitorTool));
   if (process.platform === 'win32') {
-    toolRegistry.registerTool(powershellTool);
+    toolRegistry.registerTool(wrapTool(powershellTool));
   }
-  toolRegistry.registerTool(nodeReplTool);
-  toolRegistry.registerTool(cronTool);
-  toolRegistry.registerTool(askUserTool);
+  toolRegistry.registerTool(wrapTool(nodeReplTool));
+  toolRegistry.registerTool(wrapTool(cronTool));
+  toolRegistry.registerTool(wrapTool(askUserTool));
 }
 
-export function createDefaultTools(workingDirectory: string): ToolRegistry {
-  const registry = new ToolRegistry(workingDirectory);
+export function createDefaultTools(_workingDirectory: string): ToolRegistry {
+  const registry = new ToolRegistry();
   registry.registerTool(fileReadTool);
   registry.registerTool(fileWriteTool);
   registry.registerTool(fileEditTool);
   registry.registerTool(bashTool);
   registry.registerTool(globTool);
   registry.registerTool(grepTool);
-  registry.registerTool(webSearchTool);
-  registry.registerTool(webFetchTool);
-  registry.registerTool(notebookEditTool);
-  registry.registerTool(monitorTool);
+  registry.registerTool(wrapTool(webSearchTool));
+  registry.registerTool(wrapTool(webFetchTool));
+  registry.registerTool(wrapTool(notebookEditTool));
+  registry.registerTool(wrapTool(monitorTool));
   if (process.platform === 'win32') {
-    registry.registerTool(powershellTool);
+    registry.registerTool(wrapTool(powershellTool));
   }
-  registry.registerTool(nodeReplTool);
-  registry.registerTool(cronTool);
-  registry.registerTool(askUserTool);
+  registry.registerTool(wrapTool(nodeReplTool));
+  registry.registerTool(wrapTool(cronTool));
+  registry.registerTool(wrapTool(askUserTool));
   return registry;
 }

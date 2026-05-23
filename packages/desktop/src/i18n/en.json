@@ -1,0 +1,154 @@
+{
+  "app": {
+    "title": "AiDE",
+    "loading": "Loading..."
+  },
+  "sidebar": {
+    "newSession": "New Session",
+    "sessions": "Sessions",
+    "noSessions": "No sessions yet",
+    "deleteSession": "Delete session",
+    "settings": "Settings"
+  },
+  "chat": {
+    "placeholder": "Ask AiDE anything... (Ctrl+Enter to send)",
+    "send": "Send",
+    "cancel": "Cancel",
+    "thinking": "Thinking...",
+    "streaming": "Generating...",
+    "you": "You",
+    "assistant": "AiDE",
+    "system": "System",
+    "dropFiles": "Drop files here",
+    "emptyState": "Start a conversation with AiDE",
+    "emptyStateHint": "Ask me to write code, explain concepts, or help debug your project."
+  },
+  "tool": {
+    "running": "Running",
+    "done": "Done",
+    "error": "Error",
+    "expand": "Expand",
+    "collapse": "Collapse",
+    "args": "Arguments",
+    "result": "Result",
+    "duration": "{{ms}}ms"
+  },
+  "approval": {
+    "title": "Permission Required",
+    "description": "AiDE wants to execute the following action:",
+    "approve": "Approve",
+    "deny": "Deny",
+    "remember": "Remember this decision",
+    "command": "Command",
+    "file": "File"
+  },
+  "settings": {
+    "title": "Settings",
+    "provider": "Provider",
+    "apiKey": "API Key",
+    "apiKeyPlaceholder": "Enter your API key",
+    "model": "Model",
+    "baseUrl": "Base URL",
+    "testConnection": "Test Connection",
+    "testing": "Testing...",
+    "connectionOk": "Connection successful",
+    "connectionFailed": "Connection failed",
+    "permissionMode": "Permission Mode",
+    "permissionSafe": "Safe (ask for approval)",
+    "permissionTrusted": "Trusted (auto-approve)",
+    "permissionLocked": "Locked (read-only)",
+    "thinking": "Extended Thinking",
+    "thinkingEffort": "Thinking Effort",
+    "thinkingLow": "Low",
+    "thinkingMedium": "Medium",
+    "thinkingHigh": "High",
+    "maxIterations": "Max Iterations",
+    "workingDirectory": "Working Directory",
+    "language": "Language",
+    "save": "Save",
+    "saved": "Saved",
+    "close": "Close"
+  },
+  "errors": {
+    "sendFailed": "Failed to send message",
+    "cancelFailed": "Failed to cancel",
+    "configFailed": "Failed to save settings"
+  },
+  "diff": {
+    "noChanges": "No changes",
+    "accept": "Accept",
+    "reject": "Reject",
+    "edit": "Edit",
+    "viewDiff": "View Diff"
+  },
+  "plan": {
+    "phase": {
+      "label": "Phase",
+      "exploring": "Exploring",
+      "designing": "Designing",
+      "reviewing": "Reviewing",
+      "ready": "Ready"
+    },
+    "steps": "Steps",
+    "approve": "Approve Plan",
+    "requestChanges": "Request Changes",
+    "feedbackPlaceholder": "Describe what you'd like changed...",
+    "submitFeedback": "Submit",
+    "cancel": "Cancel"
+  },
+  "monitor": {
+    "title": "Monitors",
+    "total": "total",
+    "events": "events",
+    "noEvents": "No events yet",
+    "empty": "No active monitors",
+    "stop": "Stop",
+    "status": {
+      "running": "Running",
+      "stopped": "Stopped"
+    }
+  },
+  "tasks": {
+    "title": "Tasks",
+    "empty": "No tasks",
+    "of": "of",
+    "completed": "completed"
+  },
+  "commandPalette": {
+    "title": "Command Palette",
+    "placeholder": "Type a command...",
+    "noResults": "No commands found",
+    "navigate": "to navigate",
+    "select": "to select",
+    "category": {
+      "session": "Session",
+      "provider": "Provider",
+      "tools": "Tools",
+      "settings": "Settings",
+      "help": "Help"
+    }
+  },
+  "terminal": {
+    "title": "Terminal",
+    "clear": "Clear"
+  },
+  "fileExplorer": {
+    "title": "Explorer",
+    "search": "Search files...",
+    "loading": "Loading...",
+    "empty": "No files found",
+    "git": {
+      "modified": "modified",
+      "added": "added",
+      "deleted": "deleted"
+    }
+  },
+  "tokenUsage": {
+    "title": "Token Usage",
+    "tokens": "tokens",
+    "breakdown": "Token Breakdown",
+    "input": "Input",
+    "output": "Output",
+    "total": "Total"
+  }
+}

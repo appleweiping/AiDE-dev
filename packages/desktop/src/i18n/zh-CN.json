@@ -1,0 +1,154 @@
+{
+  "app": {
+    "title": "AiDE",
+    "loading": "加载中..."
+  },
+  "sidebar": {
+    "newSession": "新建会话",
+    "sessions": "会话列表",
+    "noSessions": "暂无会话",
+    "deleteSession": "删除会话",
+    "settings": "设置"
+  },
+  "chat": {
+    "placeholder": "向 AiDE 提问... (Ctrl+Enter 发送)",
+    "send": "发送",
+    "cancel": "取消",
+    "thinking": "思考中...",
+    "streaming": "生成中...",
+    "you": "你",
+    "assistant": "AiDE",
+    "system": "系统",
+    "dropFiles": "拖放文件到此处",
+    "emptyState": "开始与 AiDE 对话",
+    "emptyStateHint": "让我帮你写代码、解释概念或调试项目。"
+  },
+  "tool": {
+    "running": "执行中",
+    "done": "完成",
+    "error": "错误",
+    "expand": "展开",
+    "collapse": "收起",
+    "args": "参数",
+    "result": "结果",
+    "duration": "{{ms}}ms"
+  },
+  "approval": {
+    "title": "需要授权",
+    "description": "AiDE 想要执行以下操作：",
+    "approve": "允许",
+    "deny": "拒绝",
+    "remember": "记住此决定",
+    "command": "命令",
+    "file": "文件"
+  },
+  "settings": {
+    "title": "设置",
+    "provider": "服务商",
+    "apiKey": "API 密钥",
+    "apiKeyPlaceholder": "输入你的 API 密钥",
+    "model": "模型",
+    "baseUrl": "接口地址",
+    "testConnection": "测试连接",
+    "testing": "测试中...",
+    "connectionOk": "连接成功",
+    "connectionFailed": "连接失败",
+    "permissionMode": "权限模式",
+    "permissionSafe": "安全（需要授权）",
+    "permissionTrusted": "信任（自动授权）",
+    "permissionLocked": "锁定（只读）",
+    "thinking": "扩展思考",
+    "thinkingEffort": "思考强度",
+    "thinkingLow": "低",
+    "thinkingMedium": "中",
+    "thinkingHigh": "高",
+    "maxIterations": "最大迭代次数",
+    "workingDirectory": "工作目录",
+    "language": "语言",
+    "save": "保存",
+    "saved": "已保存",
+    "close": "关闭"
+  },
+  "errors": {
+    "sendFailed": "发送消息失败",
+    "cancelFailed": "取消失败",
+    "configFailed": "保存设置失败"
+  },
+  "diff": {
+    "noChanges": "无变更",
+    "accept": "接受",
+    "reject": "拒绝",
+    "edit": "编辑",
+    "viewDiff": "查看差异"
+  },
+  "plan": {
+    "phase": {
+      "label": "阶段",
+      "exploring": "探索中",
+      "designing": "设计中",
+      "reviewing": "审查中",
+      "ready": "就绪"
+    },
+    "steps": "步骤",
+    "approve": "批准计划",
+    "requestChanges": "请求修改",
+    "feedbackPlaceholder": "描述你希望修改的内容...",
+    "submitFeedback": "提交",
+    "cancel": "取消"
+  },
+  "monitor": {
+    "title": "监控器",
+    "total": "个",
+    "events": "个事件",
+    "noEvents": "暂无事件",
+    "empty": "无活跃监控器",
+    "stop": "停止",
+    "status": {
+      "running": "运行中",
+      "stopped": "已停止"
+    }
+  },
+  "tasks": {
+    "title": "任务列表",
+    "empty": "暂无任务",
+    "of": "/",
+    "completed": "已完成"
+  },
+  "commandPalette": {
+    "title": "命令面板",
+    "placeholder": "输入命令...",
+    "noResults": "未找到命令",
+    "navigate": "导航",
+    "select": "选择",
+    "category": {
+      "session": "会话",
+      "provider": "服务商",
+      "tools": "工具",
+      "settings": "设置",
+      "help": "帮助"
+    }
+  },
+  "terminal": {
+    "title": "终端",
+    "clear": "清空"
+  },
+  "fileExplorer": {
+    "title": "文件浏览器",
+    "search": "搜索文件...",
+    "loading": "加载中...",
+    "empty": "未找到文件",
+    "git": {
+      "modified": "已修改",
+      "added": "已添加",
+      "deleted": "已删除"
+    }
+  },
+  "tokenUsage": {
+    "title": "Token 用量",
+    "tokens": "tokens",
+    "breakdown": "Token 明细",
+    "input": "输入",
+    "output": "输出",
+    "total": "合计"
+  }
+}

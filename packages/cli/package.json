@@ -1,0 +1,23 @@
+{
+  "name": "@aide/cli",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "aide": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsdown src/index.ts --format esm --out-dir dist",
+    "dev": "tsx src/index.ts",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@aide/core": "workspace:*",
+    "@aide/shared": "workspace:*",
+    "cac": "^6.7.14"
+  },
+  "devDependencies": {
+    "tsdown": "^0.9.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.0"
+  }
+}

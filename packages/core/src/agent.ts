@@ -93,6 +93,33 @@ export class Agent extends EventEmitter {
   private abortController: AbortController | null = null;
   private contextWindow: number;
 
+  /**
+   * Register MCP tools from a McpManager into this agent's tool registry.
+   * Call this after connecting MCP servers so the agent can use them.
+   */
+  registerMcpTools(mcpManager: { getToolDefinitions: () => Array<{ name: string; description: string; parameters: Record<string, unknown> }>; callTool: (server: string, tool: string, args: Record<string, unknown>) => Promise<string> }): void {
+    const defs = mcpManager.getToolDefinitions();
+    for (const def of defs) {
+      // Extract server name from prefixed tool name: mcp_<server>_<tool>
+      const parts = def.name.split('_');
+      const serverName = parts[1] ?? '';
+      const toolName = parts.slice(2).join('_');
+      this.toolRegistry.register(
+        def.name,
+        def.description,
+        def.parameters,
+        async (args) => {
+          try {
+            const output = await mcpManager.callTool(serverName, toolName, args);
+            return { output, isError: false };
+          } catch (err) {
+            return { output: `MCP error: ${err instanceof Error ? err.message : String(err)}`, isError: true };
+          }
+        },
+      );
+    }
+  }
+
   constructor(
     provider: LLMProvider,
     toolRegistry: ToolRegistry,
@@ -170,7 +197,25 @@ export class Agent extends EventEmitter {
     this.messages = [...messages];
   }
 
-  /** Compact old messages to save context window space. */
+  /** Compact old messages to save context window space. Uses LLM summarization if provider available. */
+  async compactContextAsync(keepRecent = 12): Promise<string> {
+    if (this.messages.length <= keepRecent + 1) {
+      return 'Context is already compact.';
+    }
+    const { compactContext, estimateMessageTokens } = await import('./session/compaction.js');
+    const result = await compactContext(
+      this.messages,
+      this.contextWindow * 0.5, // target 50% usage after compaction
+      estimateMessageTokens,
+      this.provider,
+    );
+    if (result.removedCount === 0) return 'Context is already compact.';
+    this.messages = result.messages;
+    await this.hooksManager?.fire('context:compacted', {});
+    return `Compacted ${result.removedCount} messages; saved ~${result.savedTokens} tokens.`;
+  }
+
+  /** Synchronous compact (no LLM) — used for auto-compaction in the loop. */
   compactContext(keepRecent = 12): string {
     if (this.messages.length <= keepRecent + 1) {
       return 'Context is already compact.';
@@ -178,10 +223,19 @@ export class Agent extends EventEmitter {
     const system = this.messages[0];
     const old = this.messages.slice(1, -keepRecent);
     const recent = this.messages.slice(-keepRecent);
-    const summary = summarizeMessages(old);
+    const summary = old
+      .filter((m) => m.role === 'user' || m.role === 'assistant')
+      .map((m) => {
+        const content = typeof m.content === 'string' ? m.content.slice(0, 200) : '';
+        const tools = m.role === 'assistant' && m.tool_calls
+          ? ` [${m.tool_calls.map((tc) => tc.function.name).join(', ')}]`
+          : '';
+        return `• ${m.role}${tools}: ${content}`;
+      })
+      .join('\n');
     this.messages = [
       system,
-      { role: 'system', content: `Conversation summary (compacted):\n${summary}` },
+      { role: 'system', content: `[Compacted context]\n${summary}` },
       ...recent,
     ];
     return `Compacted ${old.length} messages; kept ${recent.length} recent messages.`;
@@ -423,18 +477,6 @@ Be direct and concise. Use tools to gather information before answering when nee
 Always prefer targeted edits (file_edit) over full rewrites (file_write) when modifying existing files.
 When you have completed a task, summarize what you did in 1-3 sentences.`;
 
-function buildSystemPrompt(config: AgentConfig): string {
+function buildSystemPrompt(_config: AgentConfig): string {
   return DEFAULT_SYSTEM_PROMPT;
-}
-
-function summarizeMessages(messages: ProviderMessage[]): string {
-  return messages
-    .map((msg, i) => {
-      const content = (msg.content ?? '').slice(0, 300);
-      const toolCalls = msg.role === 'assistant' && msg.tool_calls
-        ? ` [tools: ${msg.tool_calls.map((tc) => tc.function.name).join(', ')}]`
-        : '';
-      return `${i + 1}. ${msg.role}${toolCalls}: ${content}`;
-    })
-    .join('\n');
 }

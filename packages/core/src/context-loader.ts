@@ -72,9 +72,14 @@ export async function loadProjectContext(workingDirectory: string): Promise<Load
     : [resolve(workingDirectory)];
 
   for (const dir of dirs) {
+    // Load ALL matching context files in the hierarchy (not just the first).
+    // Subdirectory files are loaded after parent files, so they can override/extend.
     for (const filename of CONTEXT_FILENAMES) {
       const content = await readIfExists(join(dir, filename));
-      if (content) { addContent(join(dir, filename), content, 'project'); break; }
+      if (content) {
+        addContent(join(dir, filename), content, 'project');
+        break; // Only one file per directory (priority: AIDE.md > CLAUDE.md > AGENTS.md)
+      }
     }
   }
 

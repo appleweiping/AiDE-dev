@@ -1,9 +1,32 @@
 import { spawn } from 'node:child_process';
 import { resolve } from 'node:path';
 import type { RegisteredTool, ToolResult } from './registry.js';
+import { resolvePath } from './path-guard.js';
 
 const DEFAULT_TIMEOUT_MS = 30_000;
 const MAX_TIMEOUT_MS = 300_000;
+
+// Environment variables that are safe to pass to child processes.
+// Secrets like API keys, tokens, passwords are excluded.
+const ENV_ALLOWLIST = new Set([
+  'PATH', 'HOME', 'USER', 'SHELL', 'TERM', 'LANG', 'LC_ALL', 'LC_CTYPE',
+  'TMPDIR', 'TMP', 'TEMP', 'PWD', 'OLDPWD', 'LOGNAME',
+  'USERPROFILE', 'APPDATA', 'LOCALAPPDATA', 'PROGRAMFILES', 'SYSTEMROOT',
+  'COMSPEC', 'PATHEXT', 'PROCESSOR_ARCHITECTURE',
+  'NODE_ENV', 'NODE_PATH', 'npm_config_prefix',
+  'GOPATH', 'GOROOT', 'CARGO_HOME', 'RUSTUP_HOME',
+  'JAVA_HOME', 'PYTHON', 'PYTHON3',
+]);
+
+function buildSafeEnv(): NodeJS.ProcessEnv {
+  const safe: NodeJS.ProcessEnv = {};
+  for (const key of Object.keys(process.env)) {
+    if (ENV_ALLOWLIST.has(key.toUpperCase()) || ENV_ALLOWLIST.has(key)) {
+      safe[key] = process.env[key];
+    }
+  }
+  return safe;
+}
 
 const DEFINITION = {
   name: 'bash',
@@ -39,7 +62,7 @@ async function handler(args: Record<string, unknown>): Promise<ToolResult> {
   }
 
   const cwd = args.working_directory
-    ? resolve(String(args.working_directory))
+    ? resolvePath(String(args.working_directory))
     : process.cwd();
 
   const timeoutMs = typeof args.timeout_ms === 'number'
@@ -57,7 +80,7 @@ async function handler(args: Record<string, unknown>): Promise<ToolResult> {
 
     const child = spawn(shell, shellArgs, {
       cwd,
-      env: process.env,
+      env: buildSafeEnv(),
       windowsHide: true,
     });
 

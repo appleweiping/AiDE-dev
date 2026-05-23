@@ -34,6 +34,7 @@ import { cronTool } from './cron.js';
 import { askUserTool } from './ask-user.js';
 import { createEnterPlanModeTool } from './enter-plan-mode.js';
 import { createExitPlanModeTool } from './exit-plan-mode.js';
+import { setWorkingDirectory } from './path-guard.js';
 import type { RegisteredTool, ToolResult } from './registry.js';
 import type { PlanManager } from '../plan/manager.js';
 
@@ -81,8 +82,10 @@ export function registerBuiltinTools(planManager?: PlanManager): void {
   }
 }
 
-export function createDefaultTools(_workingDirectory: string, planManager?: PlanManager): ToolRegistry {
+export function createDefaultTools(workingDirectory: string, planManager?: PlanManager): ToolRegistry {
   const registry = new ToolRegistry();
+  // Set the working directory for path-guard (affects file write validation)
+  setWorkingDirectory(workingDirectory);
   registry.registerTool(fileReadTool);
   registry.registerTool(fileWriteTool);
   registry.registerTool(fileEditTool);

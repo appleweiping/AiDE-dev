@@ -1,6 +1,7 @@
 import { writeFile, mkdir } from 'node:fs/promises';
-import { resolve, dirname } from 'node:path';
+import { dirname } from 'node:path';
 import type { RegisteredTool, ToolResult } from './registry.js';
+import { validateWritePath, resolvePath } from './path-guard.js';
 
 const DEFINITION = {
   name: 'file_write',
@@ -31,7 +32,11 @@ async function handler(args: Record<string, unknown>): Promise<ToolResult> {
   }
 
   const content = typeof args.content === 'string' ? args.content : String(args.content ?? '');
-  const absPath = resolve(filePath);
+
+  const pathError = validateWritePath(filePath);
+  if (pathError) return { output: pathError, isError: true };
+
+  const absPath = resolvePath(filePath);
 
   try {
     await mkdir(dirname(absPath), { recursive: true });

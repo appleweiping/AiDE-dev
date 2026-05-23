@@ -148,16 +148,7 @@ export class ApprovalManager extends EventEmitter {
   respond(response: ApprovalResponse): void {
     const resolver = this.pending.get(response.id);
     if (!resolver) return;
-
     this.pending.delete(response.id);
-
-    if (response.remember && response.approved) {
-      // Find the tool name from the request — we need to look it up
-      // Since we don't store the full request, we rely on the caller to pass toolName
-      // The UI should pass the toolName in the response if remember=true
-      // For now, we handle this via respondWithToolName
-    }
-
     resolver(response.approved);
   }
 
@@ -181,8 +172,8 @@ export class ApprovalManager extends EventEmitter {
   // -------------------------------------------------------------------------
 
   private assessToolCall(toolCall: ToolCall): RiskAssessment {
-    // bash tool — classify the command string
-    if (toolCall.name === 'bash') {
+    // bash and powershell — classify the command string
+    if (toolCall.name === 'bash' || toolCall.name === 'powershell') {
       const command = String(toolCall.arguments.command ?? '');
       return classifyCommand(command);
     }
@@ -193,8 +184,28 @@ export class ApprovalManager extends EventEmitter {
     }
 
     // Read-only tools are always safe
-    if (toolCall.name === 'file_read' || toolCall.name === 'glob' || toolCall.name === 'grep') {
+    const safeTools = new Set([
+      'file_read', 'glob', 'grep', 'web_search', 'web_fetch',
+      'lsp_hover', 'lsp_definition', 'lsp_references',
+      'shared_read', 'skill_list',
+    ]);
+    if (safeTools.has(toolCall.name)) {
       return { level: 'safe', reason: 'read-only operation' };
+    }
+
+    // Notebook edit is a write operation
+    if (toolCall.name === 'notebook_edit') {
+      return { level: 'needs_approval', reason: 'notebook write operation' };
+    }
+
+    // Desktop/browser control tools need approval
+    if (toolCall.name.startsWith('desktop_') || toolCall.name.startsWith('browser_')) {
+      return { level: 'needs_approval', reason: 'desktop or browser automation' };
+    }
+
+    // Docker sandbox is safer than bare bash
+    if (toolCall.name === 'bash_sandbox') {
+      return { level: 'safe', reason: 'sandboxed execution' };
     }
 
     // Unknown tools default to needs_approval

@@ -1,6 +1,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import type { RegisteredTool, ToolResult } from './registry.js';
+import { validateWritePath, resolvePath } from './path-guard.js';
 
 const DEFINITION = {
   name: 'file_edit',
@@ -43,7 +44,11 @@ async function handler(args: Record<string, unknown>): Promise<ToolResult> {
   const newString = typeof args.new_string === 'string' ? args.new_string : String(args.new_string ?? '');
   const replaceAll = Boolean(args.replace_all);
 
-  const absPath = resolve(filePath);
+  const absPath = resolvePath(filePath);
+
+  // Enforce write path restriction
+  const pathError = validateWritePath(filePath);
+  if (pathError) return { output: pathError, isError: true };
 
   let content: string;
   try {

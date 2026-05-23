@@ -590,6 +590,84 @@ Open the MCP Manager from the sidebar header or via Command Palette → "Open MC
 
 ---
 
+## Background Daemon & Mobile Remote Control
+
+### Background Daemon (Screen-off Operation)
+
+AiDE runs a persistent background daemon so agents keep working even when the desktop window is closed or the screen is off — the same pattern as Codex's `app-server`.
+
+```bash
+# Start the daemon (runs on ws://127.0.0.1:7432)
+aide daemon start
+
+# Check status
+aide daemon status
+
+# Stop
+aide daemon stop
+```
+
+When you close the AiDE desktop window, it minimizes to the system tray. The Node.js core engine keeps running as a WebSocket server. Reopen the window at any time to reconnect — your sessions and running agents are still there.
+
+The daemon writes a PID file to `~/.aide/daemon.pid` and logs to `~/.aide/daemon.log`.
+
+### Mobile Remote Control
+
+Control AiDE from your phone while agents run on your desktop.
+
+**Architecture:**
+
+```
+Desktop daemon ──ws──▶ Relay server ◀──ws── AiDE mobile app
+                       (self-hosted or
+                        LAN via Tailscale)
+```
+
+**Setup:**
+
+1. Start the relay server (self-host or use LAN):
+   ```bash
+   npx @aide-dev/relay   # default port 7433
+   ```
+
+2. In the AiDE desktop app, open **Settings → Remote Control** to see the QR code.
+
+3. Open the AiDE mobile app, tap **Connect**, and scan the QR code.
+
+**Mobile app features:**
+- View all sessions and switch between them
+- Send messages and receive streaming responses
+- Approve or deny tool calls (bash commands, file writes) from your phone
+- Receive push notifications via [ntfy](https://ntfy.sh) when tasks complete
+
+**Push notifications (ntfy):**
+
+```toml
+# ~/.aide/config.toml
+[notifications]
+ntfy_topic = "my-aide-abc123"   # pick something unguessable
+```
+
+Install the free [ntfy app](https://ntfy.sh) on iOS or Android and subscribe to your topic. AiDE sends a notification whenever an agent finishes a task or needs your approval.
+
+**Mobile app download:**
+
+| Platform | Link |
+|---|---|
+| iOS | App Store (coming soon) |
+| Android | Google Play (coming soon) / [APK](https://github.com/appleweiping/AiDE-dev/releases/latest) |
+
+The mobile app source is in `packages/mobile/` — build it yourself with Expo:
+
+```bash
+cd packages/mobile
+pnpm install
+npx expo start          # run in Expo Go for development
+npx eas build           # build production APK/IPA
+```
+
+---
+
 ## VS Code Extension
 
 The AiDE VS Code extension (Phase 3) lets you run the agent directly from the editor.

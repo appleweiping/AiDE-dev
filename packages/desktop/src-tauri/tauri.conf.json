@@ -22,7 +22,8 @@
         "fullscreen": false,
         "decorations": true,
         "transparent": false,
-        "center": true
+        "center": true,
+        "closable": true
       }
     ],
     "trayIcon": {
@@ -47,5 +48,10 @@
       "icons/icon.ico"
     ],
     "externalBin": ["binaries/aide-core"]
+  },
+  "plugins": {
+    "autostart": {
+      "enabled": false
+    }
   }
 }

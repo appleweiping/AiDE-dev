@@ -590,6 +590,84 @@ args = ["-y", "@modelcontextprotocol/server-postgres", "postgresql://localhost/m
 
 ---
 
+## 后台守护进程与手机远程控制
+
+### 后台守护进程（息屏持续运行）
+
+AiDE 运行一个持久化后台守护进程，即使桌面窗口关闭或屏幕熄灭，智能体也能继续工作——与 Codex 的 `app-server` 模式相同。
+
+```bash
+# 启动守护进程（监听 ws://127.0.0.1:7432）
+aide daemon start
+
+# 查看状态
+aide daemon status
+
+# 停止
+aide daemon stop
+```
+
+关闭 AiDE 桌面窗口时，应用最小化到系统托盘，Node.js 核心引擎作为 WebSocket 服务器继续运行。随时重新打开窗口即可重新连接——你的会话和正在运行的智能体都还在。
+
+守护进程将 PID 文件写入 `~/.aide/daemon.pid`，日志写入 `~/.aide/daemon.log`。
+
+### 手机远程控制
+
+在智能体于桌面运行时，用手机远程控制 AiDE。
+
+**架构：**
+
+```
+桌面守护进程 ──ws──▶ 中继服务器 ◀──ws── AiDE 手机 App
+                     （自托管或
+                      通过 Tailscale 局域网访问）
+```
+
+**配置步骤：**
+
+1. 启动中继服务器（自托管或局域网）：
+   ```bash
+   npx @aide-dev/relay   # 默认端口 7433
+   ```
+
+2. 在 AiDE 桌面应用中，打开 **设置 → 远程控制** 查看二维码。
+
+3. 打开 AiDE 手机 App，点击 **连接**，扫描二维码。
+
+**手机 App 功能：**
+- 查看所有会话并切换
+- 发送消息并接收流式响应
+- 在手机上审批或拒绝工具调用（bash 命令、文件写入）
+- 通过 [ntfy](https://ntfy.sh) 接收任务完成推送通知
+
+**推送通知（ntfy）：**
+
+```toml
+# ~/.aide/config.toml
+[notifications]
+ntfy_topic = "my-aide-abc123"   # 选一个难以猜测的名称
+```
+
+在 iOS 或 Android 上安装免费的 [ntfy 应用](https://ntfy.sh)并订阅你的主题。每当智能体完成任务或需要审批时，AiDE 会发送通知。
+
+**手机 App 下载：**
+
+| 平台 | 链接 |
+|---|---|
+| iOS | App Store（即将上线） |
+| Android | Google Play（即将上线）/ [APK](https://github.com/appleweiping/AiDE-dev/releases/latest) |
+
+手机 App 源码在 `packages/mobile/` 目录——使用 Expo 自行构建：
+
+```bash
+cd packages/mobile
+pnpm install
+npx expo start          # 在 Expo Go 中开发运行
+npx eas build           # 构建生产版 APK/IPA
+```
+
+---
+
 ## VS Code 扩展
 
 AiDE VS Code 扩展（Phase 3）让你可以直接在编辑器中运行智能体。

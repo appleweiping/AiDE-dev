@@ -193,4 +193,9 @@ export type { TelemetryOptions, TelemetrySpan, AgentMetrics } from './telemetry/
 export { A2AServer } from './a2a/server.js';
 export type { A2AServerOptions, AgentCard, A2ATask } from './a2a/server.js';
 
+// Background Daemon
+export { AideDaemon, startDaemon, isDaemonRunning, getDaemonPid, stopDaemon } from './daemon.js';
+export type { DaemonOptions } from './daemon.js';
+
+
 

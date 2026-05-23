@@ -1,0 +1,191 @@
+/**
+ * AiDE Relay Server
+ *
+ * A lightweight WebSocket relay that bridges the desktop daemon and mobile app.
+ * Both sides connect to this server; the relay forwards messages between them.
+ *
+ * Architecture:
+ *   Desktop daemon  ──ws──▶  Relay  ◀──ws──  Mobile app
+ *
+ * Auth: token-based. The desktop daemon generates a token on startup.
+ * The mobile app scans a QR code from the desktop to get the relay URL + token.
+ *
+ * Self-hostable. Default port: 7433.
+ * Can also use Tailscale for zero-infrastructure LAN access.
+ *
+ * Usage:
+ *   node dist/index.js [--port 7433] [--host 0.0.0.0]
+ */
+
+import { createServer } from 'node:http';
+import { WebSocketServer, WebSocket } from 'ws';
+import { randomUUID } from 'node:crypto';
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+interface RelayClient {
+  id: string;
+  ws: WebSocket;
+  role: 'desktop' | 'mobile' | 'unknown';
+  token: string;
+  connectedAt: number;
+}
+
+interface RelayRoom {
+  token: string;
+  desktop: RelayClient | null;
+  mobiles: Set<RelayClient>;
+  createdAt: number;
+}
+
+// ---------------------------------------------------------------------------
+// Relay Server
+// ---------------------------------------------------------------------------
+
+const PORT = parseInt(process.env.PORT ?? '7433', 10);
+const HOST = process.env.HOST ?? '0.0.0.0';
+const MAX_ROOMS = 100;
+const ROOM_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+const rooms = new Map<string, RelayRoom>();
+const clients = new Map<string, RelayClient>();
+
+function getOrCreateRoom(token: string): RelayRoom {
+  if (!rooms.has(token)) {
+    if (rooms.size >= MAX_ROOMS) {
+      // Evict oldest room
+      const oldest = [...rooms.entries()].sort((a, b) => a[1].createdAt - b[1].createdAt)[0];
+      if (oldest) rooms.delete(oldest[0]);
+    }
+    rooms.set(token, { token, desktop: null, mobiles: new Set(), createdAt: Date.now() });
+  }
+  return rooms.get(token)!;
+}
+
+function cleanupStaleRooms(): void {
+  const now = Date.now();
+  for (const [token, room] of rooms) {
+    if (now - room.createdAt > ROOM_TTL_MS && !room.desktop && room.mobiles.size === 0) {
+      rooms.delete(token);
+    }
+  }
+}
+
+setInterval(cleanupStaleRooms, 60_000);
+
+const httpServer = createServer((req, res) => {
+  if (req.url === '/health') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ status: 'ok', rooms: rooms.size, clients: clients.size }));
+    return;
+  }
+  res.writeHead(404);
+  res.end();
+});
+
+const wss = new WebSocketServer({ server: httpServer });
+
+wss.on('connection', (ws, req) => {
+  const url = new URL(req.url ?? '/', `http://${req.headers.host}`);
+  const token = url.searchParams.get('token') ?? '';
+  const role = (url.searchParams.get('role') ?? 'unknown') as RelayClient['role'];
+
+  if (!token) {
+    ws.close(4001, 'Missing token');
+    return;
+  }
+
+  const clientId = randomUUID();
+  const client: RelayClient = { id: clientId, ws, role, token, connectedAt: Date.now() };
+  clients.set(clientId, client);
+
+  const room = getOrCreateRoom(token);
+
+  if (role === 'desktop') {
+    if (room.desktop) {
+      room.desktop.ws.close(4002, 'Replaced by new desktop connection');
+    }
+    room.desktop = client;
+    console.log(`[RELAY] Desktop connected: ${clientId} token=${token.slice(0, 8)}...`);
+
+    // Notify all mobile clients that desktop is online
+    for (const mobile of room.mobiles) {
+      if (mobile.ws.readyState === WebSocket.OPEN) {
+        mobile.ws.send(JSON.stringify({ event: 'desktop.connected', data: {} }));
+      }
+    }
+  } else {
+    room.mobiles.add(client);
+    console.log(`[RELAY] Mobile connected: ${clientId} token=${token.slice(0, 8)}...`);
+
+    // Notify desktop that a mobile client connected
+    if (room.desktop?.ws.readyState === WebSocket.OPEN) {
+      room.desktop.ws.send(JSON.stringify({ event: 'mobile.connected', data: { clientId } }));
+    }
+  }
+
+  // Send welcome
+  ws.send(JSON.stringify({
+    event: 'relay.connected',
+    data: {
+      clientId,
+      role,
+      desktopOnline: !!room.desktop && room.desktop.ws.readyState === WebSocket.OPEN,
+      mobileCount: room.mobiles.size,
+    },
+  }));
+
+  ws.on('message', (data) => {
+    const room = getOrCreateRoom(token);
+
+    if (role === 'desktop') {
+      // Desktop → broadcast to all mobiles
+      for (const mobile of room.mobiles) {
+        if (mobile.ws.readyState === WebSocket.OPEN) {
+          mobile.ws.send(data);
+        }
+      }
+    } else {
+      // Mobile → forward to desktop
+      if (room.desktop?.ws.readyState === WebSocket.OPEN) {
+        room.desktop.ws.send(data);
+      } else {
+        ws.send(JSON.stringify({ event: 'error', data: { message: 'Desktop not connected' } }));
+      }
+    }
+  });
+
+  ws.on('close', () => {
+    clients.delete(clientId);
+    const room = rooms.get(token);
+    if (!room) return;
+
+    if (role === 'desktop') {
+      room.desktop = null;
+      console.log(`[RELAY] Desktop disconnected: ${clientId}`);
+      for (const mobile of room.mobiles) {
+        if (mobile.ws.readyState === WebSocket.OPEN) {
+          mobile.ws.send(JSON.stringify({ event: 'desktop.disconnected', data: {} }));
+        }
+      }
+    } else {
+      room.mobiles.delete(client);
+      console.log(`[RELAY] Mobile disconnected: ${clientId}`);
+      if (room.desktop?.ws.readyState === WebSocket.OPEN) {
+        room.desktop.ws.send(JSON.stringify({ event: 'mobile.disconnected', data: { clientId } }));
+      }
+    }
+  });
+
+  ws.on('error', (err) => {
+    console.error(`[RELAY] Client error ${clientId}: ${err.message}`);
+    clients.delete(clientId);
+  });
+});
+
+httpServer.listen(PORT, HOST, () => {
+  console.log(`[RELAY] AiDE Relay Server running on ws://${HOST}:${PORT}`);
+  console.log(`[RELAY] Health check: http://${HOST}:${PORT}/health`);
+});

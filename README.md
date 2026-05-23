@@ -5,8 +5,11 @@
 <h1 align="center">AiDE — AI Dev Environment</h1>
 
 <p align="center">
-  <strong>国产大模型驱动的桌面编程 Agent</strong><br>
-  功能对齐 Claude Code + Codex，原生支持 DeepSeek / Qwen / GLM / Kimi / 豆包 / MiniMax
+  <strong>A desktop coding agent for Chinese LLMs — feature-parity with Claude Code and Codex</strong>
+</p>
+
+<p align="center">
+  <a href="README.md">English</a> | <a href="README.zh-CN.md">中文</a>
 </p>
 
 <p align="center">
@@ -14,6 +17,7 @@
   <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-green" alt="Platform" />
   <img src="https://img.shields.io/badge/framework-Tauri%20v2-orange" alt="Framework" />
   <img src="https://img.shields.io/badge/node-%3E%3D22-brightgreen" alt="Node" />
+  <img src="https://img.shields.io/badge/version-0.1.0-informational" alt="Version" />
 </p>
 
 <p align="center">
@@ -32,123 +36,177 @@
 
 ---
 
-## 为什么选择 AiDE？
+## What is AiDE?
 
-| 对比 | Claude Code | Codex | AiDE |
-|------|-------------|-------|------|
-| 模型支持 | Claude only | GPT only | **6+ 国产模型 + 任意 OpenAI 兼容 API** |
-| 桌面应用 | Electron (~150MB) | Electron | **Tauri (~5MB)** |
-| 开源 | ❌ | 部分 | **✅ Apache-2.0** |
-| 中文优化 | 一般 | 一般 | **原生中文 UI + 中文模型** |
-| 自定义 API | 需 hack | 需 hack | **原生支持 base_url + key** |
-| 价格 | $20/月起 | $20/月起 | **按量付费，用国产模型低至 ¥0.001/次** |
+AiDE is an open-source desktop coding agent that brings the power of Claude Code and Codex to Chinese LLMs. It runs natively on Windows, macOS, and Linux via a lightweight Tauri shell (~5 MB), and connects to DeepSeek, Qwen, GLM, Kimi, Doubao, MiniMax, or any OpenAI-compatible API endpoint. The full agent loop — file editing, shell execution, web search, Git operations, MCP tools, and more — runs locally on your machine with a three-tier permission system that keeps you in control.
 
-## 功能全景
+## Why AiDE?
 
-### 核心 Agent 能力
+| | Claude Code | Codex | **AiDE** |
+|---|---|---|---|
+| Model support | Claude only | GPT only | **6 Chinese LLMs + any OpenAI-compatible API** |
+| Desktop size | Electron (~150 MB) | Electron | **Tauri (~5 MB)** |
+| Open source | No | Partial | **Yes — Apache-2.0** |
+| Chinese optimization | Basic | Basic | **Native Chinese UI + Chinese model presets** |
+| Custom API endpoint | Requires workaround | Requires workaround | **First-class `base_url` + key support** |
+| Pricing | $20/month+ | $20/month+ | **Pay-as-you-go; as low as ¥0.001/call with Chinese models** |
+| Thinking / reasoning | Claude 3.7+ | o1/o3 | **DeepSeek R1, QwQ Plus** |
+| Vision | Claude 3+ | GPT-4V | **Qwen, GLM, Doubao** |
+| Context window | 200K | 128K | **Up to 1M tokens (MiniMax)** |
 
-- **文件操作**: 读取、创建、编辑（精确字符串替换）、Jupyter Notebook 编辑
-- **代码搜索**: Glob 文件匹配 + Grep 内容搜索（支持 ripgrep）
-- **终端执行**: Bash / PowerShell，超时控制，后台运行
-- **Web 能力**: 网页搜索、URL 内容抓取
-- **Node REPL**: 持久化 JavaScript 执行环境
-- **后台监控**: 日志监听、文件变更、进程监控
-- **定时任务**: Cron 表达式调度，一次性或循环
+## Screenshots
 
-### 桌面应用功能
-
-- **多面板布局**: 聊天 + 终端 + 文件树 + Diff 预览
-- **Visual Diff**: 行级对比，接受/拒绝/编辑每个 hunk
-- **命令面板**: Ctrl+Shift+P 快速操作（类 VS Code）
-- **Plan Mode**: 复杂任务先规划再执行
-- **任务追踪**: 浮动任务清单，实时进度
-- **Token 用量**: 实时显示消耗和估算费用
-- **系统托盘**: 后台运行，快速唤起
-- **会话管理**: 保存、恢复、搜索历史对话
-
-### 安全与权限
-
-- **三级权限**: Safe（需审批）/ Trusted（自动执行）/ Locked（只读）
-- **审批弹窗**: 危险操作前弹窗确认，可记住选择
-- **文件沙箱**: 限制写入范围到工作目录
-- **命令分类**: 自动识别高危命令（rm -rf, git push --force 等）
-
-### 扩展性
-
-- **MCP 协议**: 连接任意 MCP 工具服务器
-- **插件系统**: npm 包格式，注册自定义工具和命令
-- **Git 集成**: 分支、提交、PR、Worktree 隔离
-- **多 Provider**: 运行时切换模型，支持 fallback 链
+<!-- screenshots coming soon -->
 
 ---
 
-## 快速开始
+## Features
 
-### 环境要求
+### Agent Capabilities
 
-- Node.js 22+
-- pnpm 9+
-- Rust stable（用于编译 Tauri 桌面壳）
-- Windows 10+ / macOS 12+ / Linux
+AiDE ships 15 built-in tools that cover the full coding workflow:
 
-### 安装与运行
+| Tool | Description |
+|---|---|
+| **FileRead** | Read any file with line-number offsets; supports images, PDFs, and Jupyter notebooks |
+| **FileWrite** | Create or overwrite files atomically |
+| **FileEdit** | Precise string-replacement editing — no full rewrites needed |
+| **Bash** | Execute shell commands with timeout control and background mode |
+| **PowerShell** | Windows PowerShell execution with the same safety controls as Bash |
+| **Glob** | Fast file-pattern matching across large codebases |
+| **Grep** | Regex content search powered by ripgrep |
+| **WebSearch** | Live web search for up-to-date information |
+| **WebFetch** | Fetch and parse URL content for the agent |
+| **NotebookEdit** | Edit individual cells in Jupyter `.ipynb` files |
+| **Monitor** | Stream stdout from a background process; each line fires an event |
+| **NodeREPL** | Persistent JavaScript execution environment with state across calls |
+| **Cron** | Schedule one-shot or recurring jobs with cron expressions |
+| **AskUser** | Pause the agent loop and prompt the user with a multiple-choice question |
+| **SubAgent** | Spawn parallel sub-agents for independent subtasks |
+
+### Desktop Application
+
+The desktop app is built with Tauri v2 + React and organized into the following panels:
+
+**Chat & Sessions**
+- `Chat` — streaming message view with tool-call rendering and diff previews
+- `SessionList` — browse, search, and restore past conversations
+- `SessionTabs` — multi-tab interface (Ctrl+T / Ctrl+W); rename, duplicate, close-others via context menu
+- `TokenUsage` — live input/output token counter with estimated cost in the status bar
+
+**Code Review & Diff**
+- Visual diff viewer with line-level accept / reject / edit per hunk
+- Syntax-highlighted side-by-side or unified view
+
+**Project Management**
+- `FileExplorer` — collapsible file tree with click-to-open (Ctrl+B)
+- `GitPanel` — branch list, commit history, staging area, PR creation
+- `WorktreePanel` — create and switch Git worktrees for isolated experiments
+- `RagPanel` — local TF-IDF index search across the project
+
+**Automation & Agents**
+- `Terminal` — embedded xterm.js terminal (Ctrl+\`)
+- `TaskList` — floating task checklist with real-time progress
+- `SubAgentPanel` — monitor and manage parallel sub-agent runs
+- `McpManager` — connect, configure, and inspect MCP tool servers
+- `PluginMarketplace` — browse, install, and update plugins
+
+**Settings & System**
+- `Settings` — provider selection, API key, model, permission mode, theme
+- `CommandPalette` — fuzzy-search command launcher (Ctrl+Shift+P)
+- `ApprovalDialog` — modal for dangerous-operation approval with "remember choice"
+- `UpdateNotification` — in-app update banner with skip-version support
+- System tray integration for background operation
+
+### Provider Support
+
+| Provider | Models | Context Window | Tool Use | Thinking | Vision |
+|---|---|---|---|---|---|
+| **DeepSeek** | deepseek-chat (V3), deepseek-reasoner (R1) | 64K | V3 only | R1 | No |
+| **Qwen (Alibaba)** | qwen-max, qwen-plus, qwq-plus | 32K – 131K | Yes | QwQ | Yes |
+| **GLM (Zhipu)** | glm-4-plus, glm-4-flash | 128K | Yes | No | Yes |
+| **Kimi (Moonshot)** | moonshot-v1-128k, moonshot-v1-32k | 32K – 128K | Yes | No | No |
+| **Doubao (ByteDance)** | doubao-1.5-pro-256k, doubao-1.5-lite-32k | 32K – 256K | Yes | No | Yes |
+| **MiniMax** | MiniMax-Text-01 | 1,000,000 | Yes | No | No |
+| **Custom** | Any model | Configurable | Depends on endpoint | Depends | Depends |
+
+### Extensibility
+
+- **MCP Protocol** — connect any MCP tool server; AiDE implements the full client spec including tool discovery, resource reading, and multi-server parallel connections
+- **Plugin System** — plugins are standard npm packages; register custom tools, commands, and UI panels
+- **VS Code Extension** — use AiDE's agent from inside VS Code (Phase 3)
+- **OpenAI-compatible API** — any provider that speaks the OpenAI chat completions format works out of the box
+
+### Safety & Permissions
+
+AiDE uses a three-tier permission model:
+
+| Mode | Behavior |
+|---|---|
+| **Safe** (default) | All file writes and shell commands require explicit approval |
+| **Trusted** | Approved commands run automatically; only novel high-risk operations prompt |
+| **Locked** | Read-only mode; no writes or shell execution allowed |
+
+The approval system classifies commands by risk level, shows a modal with the full command before execution, and lets you "remember this choice" for the session. The file sandbox restricts writes to the configured working directory.
+
+---
+
+## Quick Start
+
+### Prerequisites
+
+- Node.js 22 or later
+- pnpm 9 or later
+- Rust stable toolchain (for compiling the Tauri shell — install via [rustup.rs](https://rustup.rs))
+- Windows 10+ / macOS 12+ / Ubuntu 20.04+
+
+### Install and Run
 
 ```bash
-# 克隆仓库
+# Clone the repository
 git clone https://github.com/AiDE-dev/aide.git
 cd aide
 
-# 安装依赖
+# Install all workspace dependencies
 pnpm install
 
-# 开发模式（启动桌面应用 + 热重载）
+# Start the desktop app in development mode (hot reload)
 pnpm --filter @aide/desktop tauri dev
 
-# 或仅使用 CLI
-pnpm --filter @aide/cli dev -- --provider deepseek --key sk-xxx "你好"
+# Or use the CLI only (no Rust required)
+pnpm --filter @aide/cli dev -- --provider deepseek --key sk-xxx "Explain this project's architecture"
 ```
 
-### 生产构建
+### Production Build
 
 ```bash
-# 构建桌面应用安装包
+# Build the desktop installer
 pnpm --filter @aide/desktop tauri build
 
-# 产物位置:
-# Windows: packages/desktop/src-tauri/target/release/bundle/msi/
-# macOS:   packages/desktop/src-tauri/target/release/bundle/dmg/
-# Linux:   packages/desktop/src-tauri/target/release/bundle/appimage/
+# Output locations:
+# Windows:  packages/desktop/src-tauri/target/release/bundle/msi/
+# macOS:    packages/desktop/src-tauri/target/release/bundle/dmg/
+# Linux:    packages/desktop/src-tauri/target/release/bundle/appimage/
 ```
 
 ---
 
-## 配置
+## Configuration
 
-### 首次使用
+### First Launch
 
-启动后在设置面板中：
-1. 选择 Provider（下拉菜单）
-2. 输入 API Key
-3. 选择模型
-4. 点击「测试连接」
+On first launch, open the Settings panel (gear icon or Ctrl+Shift+P → "Settings"):
 
-### 支持的 Provider
+1. Select a provider from the dropdown
+2. Enter your API key
+3. Choose a model
+4. Click "Test Connection"
 
-| Provider | 获取 API Key | 推荐模型 | 特色 |
-|----------|-------------|----------|------|
-| DeepSeek | [platform.deepseek.com](https://platform.deepseek.com) | deepseek-chat, deepseek-reasoner | 性价比最高，R1 推理强 |
-| 通义千问 | [dashscope.console.aliyun.com](https://dashscope.console.aliyun.com) | qwen-max, qwq-plus | 长上下文，QwQ 推理 |
-| 智谱 GLM | [open.bigmodel.cn](https://open.bigmodel.cn) | glm-4-plus | 128K 上下文，多模态 |
-| Kimi | [platform.moonshot.cn](https://platform.moonshot.cn) | moonshot-v1-128k | 超长上下文 |
-| 豆包 | [console.volcengine.com/ark](https://console.volcengine.com/ark) | doubao-1.5-pro-256k | 256K 上下文 |
-| MiniMax | [platform.minimaxi.com](https://platform.minimaxi.com) | MiniMax-Text-01 | 百万 token 上下文 |
-| 自定义 | — | — | 任意 OpenAI 兼容 API |
+### Config File
 
-### 配置文件
+AiDE stores its configuration at `~/.aide/config.toml`:
 
 ```toml
-# ~/.aide/config.toml
-
 [provider]
 id = "deepseek"
 base_url = "https://api.deepseek.com"
@@ -158,152 +216,493 @@ model = "deepseek-chat"
 [agent]
 max_iterations = 50
 thinking_enabled = true
-permission_mode = "safe"
+permission_mode = "safe"   # safe | trusted | locked
 
 [[mcp.servers]]
 name = "filesystem"
 command = "npx"
 args = ["-y", "@modelcontextprotocol/server-filesystem", "./"]
+
+[[mcp.servers]]
+name = "github"
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-github"]
+env = { GITHUB_TOKEN = "ghp_xxx" }
 ```
+
+### Environment Variables
+
+| Variable | Description |
+|---|---|
+| `AIDE_PROVIDER` | Default provider ID (e.g. `deepseek`) |
+| `AIDE_API_KEY` | API key (overrides config file) |
+| `AIDE_BASE_URL` | Custom API base URL |
+| `AIDE_MODEL` | Model ID to use |
+| `AIDE_PERMISSION_MODE` | `safe`, `trusted`, or `locked` |
+| `AIDE_WORK_DIR` | Working directory for the agent |
+| `AIDE_MAX_ITERATIONS` | Maximum agent loop iterations (default: 50) |
+
+### Provider Setup
+
+<details>
+<summary>DeepSeek</summary>
+
+1. Sign up at [platform.deepseek.com](https://platform.deepseek.com)
+2. Create an API key under "API Keys"
+3. In AiDE Settings, select **DeepSeek** and paste the key
+4. Recommended model: `deepseek-chat` for coding tasks, `deepseek-reasoner` for complex reasoning
+
+</details>
+
+<details>
+<summary>Qwen (Alibaba Cloud)</summary>
+
+1. Sign up at [dashscope.console.aliyun.com](https://dashscope.console.aliyun.com)
+2. Enable DashScope and create an API key
+3. Select **Qwen** in AiDE Settings
+4. Recommended: `qwq-plus` for reasoning, `qwen-plus` for long-context tasks (131K)
+
+</details>
+
+<details>
+<summary>GLM (Zhipu AI)</summary>
+
+1. Register at [open.bigmodel.cn](https://open.bigmodel.cn)
+2. Create an API key in the console
+3. Select **GLM** in AiDE Settings
+4. `glm-4-plus` supports 128K context and vision
+
+</details>
+
+<details>
+<summary>Kimi (Moonshot AI)</summary>
+
+1. Register at [platform.moonshot.cn](https://platform.moonshot.cn)
+2. Create an API key
+3. Select **Kimi** in AiDE Settings
+4. `moonshot-v1-128k` is ideal for large codebases
+
+</details>
+
+<details>
+<summary>Doubao (ByteDance)</summary>
+
+1. Sign up at [console.volcengine.com/ark](https://console.volcengine.com/ark)
+2. Create an API key in the Ark console
+3. Select **Doubao** in AiDE Settings
+4. `doubao-1.5-pro-256k` offers 256K context with vision support
+
+</details>
+
+<details>
+<summary>MiniMax</summary>
+
+1. Register at [platform.minimaxi.com](https://platform.minimaxi.com)
+2. Create an API key
+3. Select **MiniMax** in AiDE Settings
+4. `MiniMax-Text-01` provides a 1M token context window
+
+</details>
+
+<details>
+<summary>Custom / Self-hosted</summary>
+
+Any OpenAI-compatible endpoint works. In AiDE Settings, select **Custom** and fill in:
+- Base URL (e.g. `http://localhost:11434/v1` for Ollama)
+- API key (use any string if the endpoint doesn't require one)
+- Model ID
+
+</details>
 
 ---
 
-## CLI 使用
+## CLI Reference
 
 ```bash
-# 单次对话
-aide "解释这个项目的架构" --provider deepseek --key sk-xxx
-
-# 交互模式
-aide -p qwen -k sk-xxx
-
-# 自定义 endpoint
-aide --base-url https://your-api.com/v1 --key sk-xxx --model custom-model
-
-# 指定工作目录
-aide -d /path/to/project "添加单元测试"
-
-# 启用思考模式
-aide --thinking "设计一个缓存系统"
+aide [options] [prompt]
 ```
 
----
-
-## 架构
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                    Desktop (Tauri v2)                     │
-│  ┌─────────┐ ┌──────┐ ┌────────┐ ┌──────┐ ┌─────────┐ │
-│  │  Chat   │ │ Diff │ │Terminal│ │Files │ │Settings │ │
-│  └────┬────┘ └──┬───┘ └───┬────┘ └──┬───┘ └────┬────┘ │
-│       └──────────┴─────────┴─────────┴──────────┘       │
-│                         │ IPC (JSON-RPC)                  │
-└─────────────────────────┼───────────────────────────────┘
-                          │
-┌─────────────────────────┼───────────────────────────────┐
-│                    Core Engine (Node.js)                  │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌────────┐  │
-│  │ Provider │  │  Agent   │  │  Tools   │  │  MCP   │  │
-│  │ Registry │  │   Loop   │  │ Registry │  │Manager │  │
-│  └──────────┘  └──────────┘  └──────────┘  └────────┘  │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌────────┐  │
-│  │ Session  │  │  Safety  │  │  Plugin  │  │  Git   │  │
-│  │ Manager  │  │ Sandbox  │  │  System  │  │  Ops   │  │
-│  └──────────┘  └──────────┘  └──────────┘  └────────┘  │
-└─────────────────────────────────────────────────────────┘
-                          │
-              ┌───────────┼───────────┐
-              ▼           ▼           ▼
-         DeepSeek      Qwen        GLM ...
-```
-
-### 技术栈
-
-| 层 | 技术 | 说明 |
+| Flag | Short | Description |
 |---|---|---|
-| 桌面壳 | Tauri v2 (Rust) | 轻量原生窗口，系统托盘，IPC |
-| 前端 | React + TypeScript + Tailwind | 暗色主题，xterm.js 终端 |
-| 核心引擎 | TypeScript (Node.js 22) | Agent loop，工具执行，流式处理 |
-| 状态存储 | JSON 文件 (→ SQLite Phase 2) | 会话持久化 |
-| 构建 | pnpm + Turborepo + tsdown | Monorepo 管理 |
-| CI/CD | GitHub Actions | 三平台自动构建和发布 |
+| `--provider <id>` | `-p` | Provider ID: `deepseek`, `qwen`, `glm`, `kimi`, `doubao`, `minimax`, `custom` |
+| `--key <key>` | `-k` | API key |
+| `--base-url <url>` | | Custom API base URL (for custom provider) |
+| `--model <id>` | `-m` | Model ID |
+| `--dir <path>` | `-d` | Working directory (default: current directory) |
+| `--thinking` | | Enable thinking/reasoning mode |
+| `--permission <mode>` | | Permission mode: `safe`, `trusted`, `locked` |
+| `--max-iter <n>` | | Maximum agent iterations (default: 50) |
+| `--interactive` | `-i` | Start interactive REPL session |
+| `--version` | `-v` | Print version and exit |
+| `--help` | `-h` | Show help |
+
+**Examples:**
+
+```bash
+# One-shot task
+aide "Add unit tests for src/utils.ts" --provider deepseek --key sk-xxx
+
+# Interactive session
+aide -p qwen -k sk-xxx -i
+
+# Custom endpoint (e.g. local Ollama)
+aide --base-url http://localhost:11434/v1 --key ollama --model llama3.2 "Refactor this file"
+
+# Specify working directory
+aide -d /path/to/project "Add a README"
+
+# Enable reasoning mode
+aide --thinking --provider deepseek --key sk-xxx "Design a distributed cache"
+
+# Trusted mode (fewer approval prompts)
+aide --permission trusted -p deepseek -k sk-xxx "Run the test suite and fix failures"
+```
 
 ---
 
-## 工具清单
+## Architecture
 
-| 工具 | 说明 | 对标 |
-|------|------|------|
-| FileRead | 读取文件（支持行号、偏移、图片、PDF、Notebook） | CC FileRead |
-| FileWrite | 创建/覆盖文件 | CC FileWrite |
-| FileEdit | 精确字符串替换编辑 | CC Edit |
-| Bash | Shell 命令执行 | CC Bash |
-| PowerShell | Windows PowerShell 执行 | CC PowerShell |
-| Glob | 文件模式匹配搜索 | CC Glob |
-| Grep | 内容搜索（ripgrep） | CC Grep |
-| WebSearch | 网页搜索 | CC WebSearch |
-| WebFetch | URL 内容抓取 | CC WebFetch |
-| NotebookEdit | Jupyter Notebook 单元格编辑 | CC NotebookEdit |
-| Monitor | 后台进程监控 | CC Monitor |
-| NodeREPL | JavaScript 执行环境 | Codex REPL |
-| Cron | 定时任务调度 | CC CronCreate |
-| AskUser | 向用户提问（多选） | CC AskUserQuestion |
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     Desktop (Tauri v2)                        │
+│  ┌──────────┐ ┌──────┐ ┌──────────┐ ┌───────┐ ┌─────────┐  │
+│  │   Chat   │ │ Diff │ │ Terminal │ │ Files │ │Settings │  │
+│  │ Sessions │ │ View │ │ xterm.js │ │  Git  │ │   MCP   │  │
+│  └────┬─────┘ └──┬───┘ └────┬─────┘ └───┬───┘ └────┬────┘  │
+│       └──────────┴──────────┴───────────┴──────────┘        │
+│                          │ IPC (JSON-RPC over stdio)          │
+└──────────────────────────┼──────────────────────────────────┘
+                           │
+┌──────────────────────────┼──────────────────────────────────┐
+│                    Core Engine (Node.js 22)                   │
+│  ┌────────────┐  ┌───────────┐  ┌───────────┐  ┌─────────┐  │
+│  │  Provider  │  │   Agent   │  │   Tools   │  │   MCP   │  │
+│  │  Registry  │  │   Loop    │  │ Registry  │  │ Manager │  │
+│  └────────────┘  └───────────┘  └───────────┘  └─────────┘  │
+│  ┌────────────┐  ┌───────────┐  ┌───────────┐  ┌─────────┐  │
+│  │  Session   │  │  Safety   │  │  Plugin   │  │   Git   │  │
+│  │  Manager  │  │  Sandbox  │  │  System   │  │   Ops   │  │
+│  └────────────┘  └───────────┘  └───────────┘  └─────────┘  │
+│  ┌────────────┐  ┌───────────┐  ┌───────────┐  ┌─────────┐  │
+│  │    RAG     │  │ Sub-Agent │  │   Plan    │  │  Auto   │  │
+│  │  Indexer  │  │  Manager  │  │  Manager  │  │ Updater │  │
+│  └────────────┘  └───────────┘  └───────────┘  └─────────┘  │
+└──────────────────────────┬──────────────────────────────────┘
+                           │
+           ┌───────────────┼───────────────┐
+           ▼               ▼               ▼
+       DeepSeek          Qwen           GLM / Kimi / Doubao / MiniMax / Custom
+```
+
+### Tech Stack
+
+| Layer | Technology | Notes |
+|---|---|---|
+| Desktop shell | Tauri v2 (Rust) | Native window, system tray, IPC bridge |
+| Frontend | React + TypeScript + Tailwind CSS | Dark theme, VS Code color palette |
+| Terminal emulator | xterm.js | Full ANSI support, resize-aware |
+| Core engine | TypeScript on Node.js 22 | Agent loop, tool execution, streaming |
+| Session storage | JSON files → SQLite (Phase 2) | SQLiteSessionStore already implemented |
+| Local search | TF-IDF indexer | File chunking, language detection, serializable index |
+| Build system | pnpm + Turborepo + tsdown | Monorepo with incremental builds |
+| CI/CD | GitHub Actions | Three-platform build and release |
+
+### Package Structure
+
+| Package | Path | Description |
+|---|---|---|
+| `@aide/core` | `packages/core` | Agent loop, all tools, providers, MCP, plugins, RAG |
+| `@aide/shared` | `packages/shared` | Types, constants, provider presets shared across packages |
+| `@aide/desktop` | `packages/desktop` | Tauri + React desktop application |
+| `@aide/cli` | `packages/cli` | Command-line interface |
+| `@aide/vscode` | `packages/vscode` | VS Code extension (Phase 3) |
 
 ---
 
-## 开发指南
+## Tool Reference
 
-详见 [CONTRIBUTING.md](CONTRIBUTING.md)
+All 15 built-in tools and their Claude Code / Codex equivalents:
 
-### 添加新 Provider
-
-所有国产模型都走 OpenAI 兼容接口。只需在 `packages/shared/src/constants.ts` 的 `PROVIDER_PRESETS` 数组中添加预设即可。
-
-### 添加新工具
-
-1. 在 `packages/core/src/tools/` 创建文件
-2. 导出 `definition`（ToolDefinition）和 `execute` 函数
-3. 在 `packages/core/src/tools/index.ts` 中注册
-
-### MCP 集成
-
-AiDE 完整实现了 MCP 协议客户端，支持：
-- 工具发现和调用
-- 资源读取
-- 多服务器并行连接
+| Tool | Description | CC Equivalent | Codex Equivalent |
+|---|---|---|---|
+| `FileRead` | Read files with offset/limit; handles images, PDFs, notebooks | `Read` | `read_file` |
+| `FileWrite` | Create or overwrite a file | `Write` | `write_file` |
+| `FileEdit` | Exact string-replacement edit (fails if string not unique) | `Edit` | `edit_file` |
+| `Bash` | Run shell commands; supports background and timeout | `Bash` | `shell` |
+| `PowerShell` | Windows PowerShell execution | `PowerShell` | — |
+| `Glob` | File pattern matching, sorted by modification time | `Glob` | `glob` |
+| `Grep` | Regex content search via ripgrep; supports context lines | `Grep` | `grep` |
+| `WebSearch` | Live web search | `WebSearch` | `web_search` |
+| `WebFetch` | Fetch and extract content from a URL | `WebFetch` | `web_fetch` |
+| `NotebookEdit` | Edit, insert, or delete Jupyter notebook cells | `NotebookEdit` | — |
+| `Monitor` | Stream stdout from a background process | `Monitor` | — |
+| `NodeREPL` | Persistent JavaScript REPL with state across calls | — | `repl` |
+| `Cron` | Schedule jobs with cron expressions | — | — |
+| `AskUser` | Pause and prompt the user with a multiple-choice question | — | — |
+| `SubAgent` | Spawn a parallel sub-agent for an independent subtask | — | — |
 
 ---
 
-## 路线图
+## Keyboard Shortcuts
 
-### Phase 1 ✅ (当前)
-- [x] 桌面应用 + 聊天界面
-- [x] 6 个 Provider 预设
-- [x] 完整工具链（14 个工具）
-- [x] 权限系统 + 审批弹窗
-- [x] 会话持久化
-- [x] 中英双语 UI
-- [x] Visual Diff / Plan Mode / Command Palette
-- [x] MCP 客户端
-- [x] 插件系统
+| Shortcut | Action |
+|---|---|
+| `Ctrl+Shift+P` | Open Command Palette |
+| `Ctrl+B` | Toggle File Explorer sidebar |
+| `Ctrl+\`` | Toggle embedded Terminal |
+| `Ctrl+T` | Open new session tab |
+| `Ctrl+W` | Close active session tab |
+| `Ctrl+Enter` | Send message (in chat input) |
+| `Escape` | Close modal / Command Palette |
+| `Ctrl+L` | Clear current session messages |
 
-### Phase 2 (进行中)
-- [ ] MCP 管理 UI
-- [ ] Git 工作流 UI（分支、提交、PR）
-- [ ] Sub-agent 并行任务
-- [ ] 自动更新
-- [ ] SQLite 存储迁移
+---
 
-### Phase 3
-- [ ] 插件市场
-- [ ] Worktree 沙箱
-- [ ] 多会话标签页
-- [ ] VS Code 扩展
-- [ ] RAG 本地索引
+## Plugin Development
+
+Plugins are npm packages that export a manifest and register tools or commands with AiDE's core engine.
+
+### Minimal Plugin
+
+```typescript
+// package.json
+{
+  "name": "aide-plugin-hello",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "aidePlugin": true
+}
+
+// src/index.ts
+import type { PluginContext, PluginManifest } from '@aide/core';
+
+export const manifest: PluginManifest = {
+  id: 'hello',
+  name: 'Hello Plugin',
+  version: '1.0.0',
+  description: 'A minimal AiDE plugin example',
+};
+
+export async function activate(ctx: PluginContext) {
+  ctx.tools.register({
+    name: 'hello_world',
+    description: 'Greet the user',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'Name to greet' },
+      },
+      required: ['name'],
+    },
+    async execute({ name }) {
+      return { content: `Hello, ${name}!` };
+    },
+  });
+}
+```
+
+### Installing a Plugin
+
+```bash
+# From npm
+aide plugin install aide-plugin-hello
+
+# From a local path
+aide plugin install ./my-plugin
+
+# Via the Plugin Marketplace UI
+# Open Command Palette → "Open Plugin Marketplace"
+```
+
+### Plugin API
+
+The `PluginContext` object provides:
+
+- `ctx.tools` — register and unregister tools
+- `ctx.commands` — register Command Palette entries
+- `ctx.sessions` — read and write session data
+- `ctx.config` — read plugin configuration
+- `ctx.events` — subscribe to agent lifecycle events
+
+---
+
+## MCP Integration
+
+AiDE implements the full [Model Context Protocol](https://modelcontextprotocol.io) client spec. Connect any MCP server to extend the agent with additional tools and resources.
+
+### Configuration
+
+Add servers to `~/.aide/config.toml`:
+
+```toml
+[[mcp.servers]]
+name = "filesystem"
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-filesystem", "/home/user/projects"]
+
+[[mcp.servers]]
+name = "github"
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-github"]
+env = { GITHUB_TOKEN = "ghp_xxx" }
+
+[[mcp.servers]]
+name = "postgres"
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-postgres", "postgresql://localhost/mydb"]
+```
+
+### Supported MCP Features
+
+- Tool discovery and invocation
+- Resource reading (files, database records, API responses)
+- Multi-server parallel connections
+- Server health monitoring via the MCP Manager UI
+
+### MCP Manager UI
+
+Open the MCP Manager from the sidebar header or via Command Palette → "Open MCP Manager". From there you can:
+
+- Add and remove servers
+- View connection status and tool list for each server
+- Restart a failed server
+- Inspect tool schemas
+
+---
+
+## VS Code Extension
+
+The AiDE VS Code extension (Phase 3) lets you run the agent directly from the editor.
+
+### Installation
+
+```bash
+# From the VS Code Marketplace (when available)
+code --install-extension aide-dev.aide
+
+# Or install the .vsix manually
+code --install-extension aide-0.1.0.vsix
+```
+
+### Usage
+
+- Open the AiDE panel from the Activity Bar
+- The extension reuses your `~/.aide/config.toml` configuration
+- All 15 tools are available, with the workspace root as the working directory
+- Diffs appear inline in the editor using VS Code's native diff viewer
+
+---
+
+## Roadmap
+
+### Phase 1 — Foundation (complete)
+
+- [x] Desktop app with chat interface
+- [x] 6 Chinese LLM provider presets
+- [x] Full tool suite (15 tools)
+- [x] Three-tier permission system with approval dialogs
+- [x] Session persistence (JSON)
+- [x] Bilingual UI (English + Chinese)
+- [x] Visual Diff viewer
+- [x] Plan Mode
+- [x] Command Palette
+- [x] MCP client
+- [x] Plugin system
+
+### Phase 2 — Collaboration (complete)
+
+- [x] MCP Manager UI
+- [x] Git workflow panel (branches, commits, PRs)
+- [x] Sub-agent parallel task execution
+- [x] Auto-updater
+- [x] SQLite session store
+- [x] Session tabs (multi-tab interface)
+- [x] Worktree panel
+
+### Phase 3 — Intelligence (complete)
+
+- [x] Plugin Marketplace
+- [x] Worktree sandbox
+- [x] RAG local indexing (TF-IDF)
+- [x] VS Code extension scaffold
+- [x] Sub-agent panel UI
+
+### Phase 4 — Future
+
+- [ ] Mobile companion app (iOS / Android)
+- [ ] Voice input and text-to-speech output
+- [ ] Collaborative mode (shared sessions, multi-user)
+- [ ] Cloud sync for sessions and settings
+- [ ] Fine-tuned tool-use models for Chinese LLMs
+- [ ] Semantic RAG (vector embeddings, not just TF-IDF)
+
+---
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide.
+
+### Adding a New Provider
+
+All Chinese LLMs use the OpenAI-compatible chat completions format. To add a new provider, append an entry to the `PROVIDER_PRESETS` array in `packages/shared/src/constants.ts`:
+
+```typescript
+{
+  id: 'myprovider',
+  name: 'My Provider',
+  nameZh: '我的提供商',
+  baseUrl: 'https://api.myprovider.com/v1',
+  supportsToolUse: true,
+  supportsThinking: false,
+  supportsVision: false,
+  models: [
+    { id: 'my-model-v1', name: 'My Model V1', contextWindow: 128000, supportsToolUse: true, supportsThinking: false },
+  ],
+}
+```
+
+### Adding a New Tool
+
+1. Create `packages/core/src/tools/my-tool.ts` and export a `ToolDefinition` and `execute` function
+2. Export it from `packages/core/src/tools/index.ts`
+3. Export it from `packages/core/src/index.ts`
+4. Add an entry to the Tool Reference table in this README
+
+---
+
+## FAQ
+
+**Q: Do I need a paid subscription to use AiDE?**
+No. AiDE is free and open source. You pay only for the API calls you make to your chosen provider. DeepSeek V3 costs roughly ¥0.001 per 1K tokens — orders of magnitude cheaper than Claude Code or Codex subscriptions.
+
+**Q: Does AiDE send my code to any third-party servers?**
+AiDE sends only the messages you explicitly send to the LLM provider you configure. No telemetry, no analytics, no data collection. The agent runs entirely on your machine.
+
+**Q: Can I use AiDE with a local model (Ollama, LM Studio)?**
+Yes. Select "Custom" as the provider, set the base URL to your local server (e.g. `http://localhost:11434/v1`), and enter any string as the API key. Tool use depends on whether your local model supports the OpenAI function-calling format.
+
+**Q: How does AiDE compare to Cursor or Windsurf?**
+Cursor and Windsurf are full IDE replacements. AiDE is a standalone agent that works alongside your existing editor. It's closer to Claude Code or Codex in philosophy — a terminal/desktop agent you invoke for specific tasks.
+
+**Q: The Tauri build fails on my machine. What should I do?**
+Make sure you have the Rust stable toolchain installed (`rustup toolchain install stable`). On Windows, you also need the MSVC build tools (Visual Studio Build Tools 2022). See the [Tauri prerequisites guide](https://tauri.app/start/prerequisites/) for platform-specific instructions.
+
+**Q: Can I run multiple providers simultaneously?**
+Not in a single session, but you can switch providers between sessions or configure a fallback chain in `config.toml`. Sub-agent tasks can use different providers than the main agent.
 
 ---
 
 ## License
 
-[Apache-2.0](LICENSE) — 可自由商用、修改、分发。
+[Apache-2.0](LICENSE) — free to use, modify, and distribute, including for commercial purposes.
+
+---
+
+## Acknowledgments
+
+- [Tauri](https://tauri.app) — for making a 5 MB cross-platform desktop app possible
+- [React](https://react.dev) and the React ecosystem
+- [xterm.js](https://xtermjs.org) — the terminal emulator
+- [DeepSeek](https://deepseek.com), [Alibaba Cloud](https://www.alibabacloud.com), [Zhipu AI](https://zhipuai.cn), [Moonshot AI](https://moonshot.cn), [ByteDance](https://bytedance.com), and [MiniMax](https://minimax.chat) — for building world-class LLMs and open APIs
+- The [Model Context Protocol](https://modelcontextprotocol.io) team at Anthropic
+- All contributors and early adopters

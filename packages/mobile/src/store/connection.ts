@@ -161,10 +161,16 @@ let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 const HEARTBEAT_MS = 20_000;
 const MAX_RECONNECT_DELAY_MS = 30_000;
+const WS_OPEN = 1; // WebSocket.OPEN — use numeric constant, not WebSocket.OPEN (not available in RN)
+
+// Track pending RPC requests so we can route responses correctly
+const pendingRequests = new Map<number, string>(); // id → method
 
 function rpc(ws: WebSocket, method: string, params: Record<string, unknown>, id?: number): void {
-  if (ws.readyState !== WebSocket.OPEN) return;
-  ws.send(JSON.stringify({ jsonrpc: '2.0', id: id ?? Date.now(), method, params }));
+  if (ws.readyState !== WS_OPEN) return;
+  const reqId = id ?? Date.now();
+  pendingRequests.set(reqId, method);
+  ws.send(JSON.stringify({ jsonrpc: '2.0', id: reqId, method, params }));
 }
 
 function parseDiffs(output: string): DiffHunk[] {
@@ -213,7 +219,7 @@ export const useConnectionStore = create<ConnectionStore>((set, get) => {
 
   function sendOrQueue(method: string, params: Record<string, unknown>): void {
     const { ws, status } = get();
-    if (ws && ws.readyState === WebSocket.OPEN) {
+    if (ws && ws.readyState === WS_OPEN) {
       rpc(ws, method, params);
     } else if (status !== 'disconnected') {
       set((s) => ({ offlineQueue: [...s.offlineQueue, { method, params }] }));
@@ -222,7 +228,7 @@ export const useConnectionStore = create<ConnectionStore>((set, get) => {
 
   function flushQueue(): void {
     const { ws, offlineQueue } = get();
-    if (!ws || ws.readyState !== WebSocket.OPEN || offlineQueue.length === 0) return;
+    if (!ws || ws.readyState !== WS_OPEN || offlineQueue.length === 0) return;
     for (const item of offlineQueue) rpc(ws, item.method, item.params);
     set({ offlineQueue: [] });
   }
@@ -230,7 +236,7 @@ export const useConnectionStore = create<ConnectionStore>((set, get) => {
   function startHeartbeat(ws: WebSocket): void {
     if (heartbeatTimer) clearInterval(heartbeatTimer);
     heartbeatTimer = setInterval(() => {
-      if (ws.readyState === WebSocket.OPEN) {
+      if (ws.readyState === WS_OPEN) {
         ws.send(JSON.stringify({ jsonrpc: '2.0', id: 0, method: 'ping', params: {} }));
       }
     }, HEARTBEAT_MS);
@@ -377,24 +383,32 @@ export const useConnectionStore = create<ConnectionStore>((set, get) => {
   }
 
   function handleRpcResult(id: number, result: unknown): void {
-    // Identify result type by shape
-    if (Array.isArray(result)) {
-      if (result.length === 0) return;
-      const first = result[0] as Record<string, unknown>;
-      if ('workingDirectory' in first) {
-        set({ sessions: result as Session[] });
-      } else if ('models' in first) {
-        set({ providers: result as ProviderPreset[] });
-      } else if ('name' in first && 'type' in first) {
-        set({ fileTree: result as FileEntry[], fileTreeLoading: false });
+    const method = pendingRequests.get(id);
+    pendingRequests.delete(id);
+
+    switch (method) {
+      case 'session.list':
+        set({ sessions: Array.isArray(result) ? result as Session[] : [] });
+        break;
+      case 'provider.list':
+        set({ providers: Array.isArray(result) ? result as ProviderPreset[] : [] });
+        break;
+      case 'fs.list':
+        set({ fileTree: Array.isArray(result) ? result as FileEntry[] : [], fileTreeLoading: false });
+        break;
+      case 'git.status':
+        if (result && typeof result === 'object') set({ gitStatus: result as GitStatus });
+        break;
+      case 'git.log': {
+        const r = result as Record<string, unknown> | null;
+        if (r && 'output' in r && typeof r.output === 'string') {
+          set({ gitLog: r.output.split('\n').filter(Boolean) });
+        }
+        break;
       }
-    } else if (result && typeof result === 'object') {
-      const r = result as Record<string, unknown>;
-      if ('branch' in r) {
-        set({ gitStatus: r as unknown as GitStatus });
-      } else if ('output' in r && typeof r.output === 'string' && r.output.includes('commit')) {
-        set({ gitLog: (r.output as string).split('\n').filter(Boolean) });
-      }
+      default:
+        // Unknown or untracked response — ignore
+        break;
     }
   }
 

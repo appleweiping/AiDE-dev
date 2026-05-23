@@ -27,7 +27,7 @@ import { ApprovalManager } from './safety/approval.js';
 import { McpManager } from './mcp/manager.js';
 import { HooksManager } from './hooks/manager.js';
 import { SharedContext } from './agent/sub-agent.js';
-import { registerBuiltinTools } from './tools/index.js';
+import { registerBuiltinTools, createDefaultTools } from './tools/index.js';
 import { PROVIDER_PRESETS } from '@aide/shared';
 import { providerRegistry } from './provider/registry.js';
 import { Agent } from './agent.js';
@@ -199,7 +199,10 @@ export class AideDaemon {
     this.broadcast('daemon.ready', { port: this.port, pid: process.pid });
   }
 
+  private stopped = false;
+
   async stop(): Promise<void> {
+    this.stopped = true;
     logger.info('Daemon stopping...');
     this.relayWs?.close();
     this.wss?.close();
@@ -271,8 +274,8 @@ export class AideDaemon {
         if (!session) return this.sendToClient(client, { jsonrpc: '2.0', id: msg.id, error: { code: -32001, message: 'Session not found' } });
 
         const provider = providerRegistry.get(providerConfig);
-        const { toolRegistry, registerBuiltinTools: reg } = await import('./tools/index.js');
-        reg();
+        // Create a fresh tool registry per agent — never share the singleton
+        const registry = createDefaultTools(session.workingDirectory);
 
         const config: AgentConfig = {
           provider: providerConfig,
@@ -284,7 +287,7 @@ export class AideDaemon {
           ...agentConfig,
         };
 
-        const agent = await Agent.create(provider, toolRegistry, config, this.approvalManager, this.hooksManager);
+        const agent = await Agent.create(provider, registry, config, this.approvalManager, this.hooksManager);
         this.activeAgent = agent;
         this.activeSessionId = sessionId;
 
@@ -317,6 +320,9 @@ export class AideDaemon {
         this.approvalManager.respond({ id: approvalId, approved, remember });
         return this.sendToClient(client, { jsonrpc: '2.0', id: msg.id, result: { ok: true } });
       }
+
+      case 'ping':
+        return this.sendToClient(client, { jsonrpc: '2.0', id: msg.id, result: { pong: true } });
 
       case 'daemon.status': {
         return this.sendToClient(client, {
@@ -379,6 +385,7 @@ export class AideDaemon {
     });
 
     this.relayWs.on('close', () => {
+      if (this.stopped) return;
       logger.warn('Relay disconnected, reconnecting in 5s...');
       this.broadcast('relay.disconnected', {});
       setTimeout(() => this.connectRelay(), 5000);

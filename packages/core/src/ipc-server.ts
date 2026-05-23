@@ -32,8 +32,10 @@ import { SessionManager } from './session/manager.js';
 import { McpManager } from './mcp/manager.js';
 import type { McpServerConfig } from './mcp/client.js';
 import { GitOperations } from './git/operations.js';
-import { SubAgentManager } from './agent/sub-agent.js';
+import { SubAgentManager, SharedContext } from './agent/sub-agent.js';
 import { AutoUpdater } from './updater/index.js';
+import { HooksManager } from './hooks/manager.js';
+import type { HookDefinition, HookEvent } from './hooks/manager.js';
 
 // ---------------------------------------------------------------------------
 // JSON-RPC types
@@ -67,14 +69,20 @@ export class IpcServer {
   private approvalManager: ApprovalManager;
   private mcpManager: McpManager;
   private updater: AutoUpdater;
+  private hooksManager: HooksManager;
   private activeAgent: Agent | null = null;
   private activeSessionId: string | null = null;
+  private sharedContext: SharedContext | null = null;
 
   constructor(sessionsDir: string) {
     this.sessionManager = new SessionManager(sessionsDir);
     this.approvalManager = new ApprovalManager('safe');
     this.mcpManager = new McpManager();
     this.updater = new AutoUpdater({ owner: 'aide-dev', repo: 'aide' });
+    this.hooksManager = new HooksManager();
+
+    // Initialize shared context for sub-agent communication
+    this.sharedContext = new SharedContext();
 
     // Forward approval requests to the UI
     this.approvalManager.on('approval_request', (request) => {
@@ -305,6 +313,26 @@ export class IpcServer {
         return this.sendResult(request.id, { summary });
       }
 
+      // --- Shared context methods ---
+      case 'agent.getShared': {
+        const key = String(params.key ?? '');
+        if (!key) return this.sendError(request.id, -32602, 'key is required');
+        const value = this.sharedContext?.get(key);
+        return this.sendResult(request.id, { key, value: value !== undefined ? value : null });
+      }
+
+      case 'agent.setShared': {
+        const key = String(params.key ?? '');
+        if (!key) return this.sendError(request.id, -32602, 'key is required');
+        this.sharedContext?.set(key, params.value);
+        return this.sendResult(request.id, { ok: true });
+      }
+
+      case 'agent.listShared': {
+        const keys = this.sharedContext?.keys() ?? [];
+        return this.sendResult(request.id, { keys });
+      }
+
       // --- Approval methods ---
       case 'approval.respond': {
         const response = params as ApprovalResponse;
@@ -485,6 +513,9 @@ export class IpcServer {
         manager.on('finished', (result) =>
           this.sendEvent('agent.subFinished', { parentSessionId: sessionId, ...result }),
         );
+        manager.on('message', (fromId, toId, content) =>
+          this.sendEvent('agent.subMessage', { parentSessionId: sessionId, fromId, toId, content }),
+        );
 
         // Acknowledge immediately, run async
         this.sendResult(request.id, { started: true, task });
@@ -522,6 +553,41 @@ export class IpcServer {
           this.sendEvent('updater.error', { error: message });
         });
         return;
+      }
+
+      // --- Hooks methods ---
+      case 'hooks.register': {
+        const hook = params as HookDefinition;
+        if (!hook?.event || !hook?.command) {
+          return this.sendError(request.id, -32602, 'event and command are required');
+        }
+        this.hooksManager.register(hook);
+        return this.sendResult(request.id, { registered: true });
+      }
+
+      case 'hooks.list': {
+        return this.sendResult(request.id, this.hooksManager.getRegistered());
+      }
+
+      case 'hooks.unregister': {
+        const event = String(params.event ?? '') as HookEvent;
+        if (!event) return this.sendError(request.id, -32602, 'event is required');
+        this.hooksManager.unregister(event);
+        return this.sendResult(request.id, { unregistered: true });
+      }
+
+      // --- Session fork ---
+      case 'session.fork': {
+        const { sessionId, title, truncateAfterMessageIndex } = params as {
+          sessionId: string;
+          title?: string;
+          truncateAfterMessageIndex?: number;
+        };
+        if (!sessionId) return this.sendError(request.id, -32602, 'sessionId is required');
+        const forked = await this.sessionManager.fork(sessionId, { title, truncateAfterMessageIndex });
+        if (!forked) return this.sendError(request.id, -32001, 'Session not found');
+        this.sendEvent('session.forked', { originalId: sessionId, forkedId: forked.id, title: forked.title });
+        return this.sendResult(request.id, forked);
       }
 
       default:

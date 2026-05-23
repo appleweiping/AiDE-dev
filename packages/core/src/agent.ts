@@ -4,6 +4,9 @@ import { DEFAULT_MAX_ITERATIONS } from '@aide/shared';
 import type { LLMProvider, CompletionRequest, ProviderMessage, ProviderToolCall } from './provider/index.js';
 import { ToolRegistry } from './tools/registry.js';
 import type { ApprovalManager } from './safety/approval.js';
+import { loadProjectContext, formatContextForPrompt } from './context-loader.js';
+import type { HooksManager } from './hooks/manager.js';
+import type { PlanManager } from './plan/manager.js';
 
 // ---------------------------------------------------------------------------
 // Event types
@@ -28,6 +31,10 @@ export interface AgentEvents {
   done: [reason: 'reply' | 'max_iterations' | 'cancelled' | 'error', content: string];
   /** Fired on unrecoverable errors */
   error: [err: Error];
+  /** Fired when prompt caching stats are available */
+  cache_stats: [cacheReadTokens: number, cacheCreationTokens: number];
+  /** Fired when context is auto-compacted */
+  compacted: [messagesBefore: number, messagesAfter: number];
 }
 
 // ---------------------------------------------------------------------------
@@ -42,25 +49,66 @@ export interface Agent {
   once<K extends keyof AgentEvents>(event: K, listener: (...args: AgentEvents[K]) => void): this;
 }
 
+// Rough token estimate: 1 token ≈ 4 chars. Used for auto-compaction threshold.
+function estimateTokens(messages: ProviderMessage[]): number {
+  let chars = 0;
+  for (const m of messages) {
+    if (typeof m.content === 'string') chars += m.content.length;
+    if (m.tool_calls) chars += JSON.stringify(m.tool_calls).length;
+  }
+  return Math.ceil(chars / 4);
+}
+
+// Context window sizes by model keyword (conservative lower bounds)
+const MODEL_CONTEXT_WINDOWS: Array<[RegExp, number]> = [
+  [/minimax/i, 1_000_000],
+  [/moonshot.*128k|kimi.*128k/i, 128_000],
+  [/moonshot.*32k|kimi.*32k/i, 32_000],
+  [/glm-4/i, 128_000],
+  [/qwen.*131k|qwen.*plus/i, 131_000],
+  [/qwen.*max/i, 32_000],
+  [/qwq/i, 131_000],
+  [/doubao.*256k/i, 256_000],
+  [/doubao/i, 32_000],
+  [/deepseek/i, 64_000],
+  [/gpt-4/i, 128_000],
+  [/claude/i, 200_000],
+];
+
+function getContextWindow(model: string): number {
+  for (const [re, size] of MODEL_CONTEXT_WINDOWS) {
+    if (re.test(model)) return size;
+  }
+  return 32_000; // safe default
+}
+
 export class Agent extends EventEmitter {
   private provider: LLMProvider;
   private toolRegistry: ToolRegistry;
   private approvalManager: ApprovalManager | null;
+  private hooksManager: HooksManager | null;
+  private planManager: PlanManager | null;
   private config: AgentConfig;
   private messages: ProviderMessage[] = [];
   private abortController: AbortController | null = null;
+  private contextWindow: number;
 
   constructor(
     provider: LLMProvider,
     toolRegistry: ToolRegistry,
     config: AgentConfig,
     approvalManager?: ApprovalManager,
+    hooksManager?: HooksManager,
+    planManager?: PlanManager,
   ) {
     super();
     this.provider = provider;
     this.toolRegistry = toolRegistry;
     this.config = config;
     this.approvalManager = approvalManager ?? null;
+    this.hooksManager = hooksManager ?? null;
+    this.planManager = planManager ?? null;
+    this.contextWindow = getContextWindow(config.provider.model);
 
     // Inject system prompt
     this.messages.push({
@@ -70,13 +118,41 @@ export class Agent extends EventEmitter {
   }
 
   // -------------------------------------------------------------------------
+  // Static factory
+  // -------------------------------------------------------------------------
+
+  /** Create an Agent and inject project context into the system message. */
+  static async create(
+    provider: LLMProvider,
+    toolRegistry: ToolRegistry,
+    config: AgentConfig,
+    approvalManager?: ApprovalManager,
+    hooksManager?: HooksManager,
+    planManager?: PlanManager,
+  ): Promise<Agent> {
+    const agent = new Agent(provider, toolRegistry, config, approvalManager, hooksManager, planManager);
+    if (config.workingDirectory) {
+      const context = await loadProjectContext(config.workingDirectory);
+      const contextText = formatContextForPrompt(context);
+      if (contextText) {
+        const systemMsg = agent.messages[0];
+        if (systemMsg && typeof systemMsg.content === 'string') {
+          systemMsg.content = contextText + '\n\n' + systemMsg.content;
+        }
+      }
+    }
+    return agent;
+  }
+
+  // -------------------------------------------------------------------------
   // Public API
   // -------------------------------------------------------------------------
 
   /** Send a user message and run the agent loop until a final reply or max iterations. */
-  async run(userMessage: string): Promise<string> {
+  async run(userMessage: string, sessionId?: string): Promise<string> {
     this.messages.push({ role: 'user', content: userMessage });
-    return this.loop();
+    await this.hooksManager?.fire('session:start', { sessionId });
+    return this.loop(sessionId);
   }
 
   /** Cancel the currently running loop. */
@@ -115,7 +191,7 @@ export class Agent extends EventEmitter {
   // Core loop
   // -------------------------------------------------------------------------
 
-  private async loop(): Promise<string> {
+  private async loop(sessionId?: string): Promise<string> {
     this.abortController = new AbortController();
     const signal = this.abortController.signal;
     const maxIterations = this.config.maxIterations ?? DEFAULT_MAX_ITERATIONS;
@@ -124,11 +200,25 @@ export class Agent extends EventEmitter {
       for (let i = 0; i < maxIterations; i++) {
         if (signal.aborted) {
           this.emit('done', 'cancelled', '');
+          await this.hooksManager?.fire('agent:cancelled', { sessionId });
           return '';
         }
 
         this.emit('iteration', i + 1, maxIterations);
+        await this.hooksManager?.fire('agent:iteration', { sessionId, extra: { iteration: i + 1, maxIterations } });
+
+        // Auto-compact at 90% context window usage
+        const estimatedTokens = estimateTokens(this.messages);
+        if (estimatedTokens > this.contextWindow * 0.9) {
+          const before = this.messages.length;
+          this.compactContext(12);
+          const after = this.messages.length;
+          this.emit('compacted', before, after);
+          await this.hooksManager?.fire('context:compacted', { sessionId, extra: { before, after } });
+        }
+
         this.emit('thinking', i + 1);
+        await this.hooksManager?.fire('agent:thinking', { sessionId, extra: { iteration: i + 1 } });
 
         // Build completion request
         const request = this.buildRequest();
@@ -171,6 +261,10 @@ export class Agent extends EventEmitter {
                 // Nothing extra needed — accumulation is complete
                 break;
 
+              case 'cache_stats':
+                this.emit('cache_stats', chunk.cacheReadTokens, chunk.cacheCreationTokens);
+                break;
+
               case 'done':
                 // Loop will handle finish
                 break;
@@ -179,6 +273,7 @@ export class Agent extends EventEmitter {
         } catch (err) {
           if (signal.aborted) {
             this.emit('done', 'cancelled', '');
+            await this.hooksManager?.fire('agent:cancelled', { sessionId });
             return '';
           }
           throw err;
@@ -186,6 +281,7 @@ export class Agent extends EventEmitter {
 
         if (signal.aborted) {
           this.emit('done', 'cancelled', '');
+          await this.hooksManager?.fire('agent:cancelled', { sessionId });
           return '';
         }
 
@@ -209,12 +305,19 @@ export class Agent extends EventEmitter {
           const reply = contentAccum;
           this.emit('reply', reply);
           this.emit('done', 'reply', reply);
+          await this.hooksManager?.fire('agent:reply', { sessionId });
+          await this.hooksManager?.fire('session:end', { sessionId });
           return reply;
         }
 
         // Execute tool calls
         for (const tc of toolCalls) {
           if (signal.aborted) break;
+
+          // Sync read-only state from plan manager before each tool execution
+          if (this.planManager) {
+            this.toolRegistry.setReadOnly(this.planManager.isInPlanMode);
+          }
 
           let parsedArgs: Record<string, unknown>;
           try {
@@ -230,6 +333,7 @@ export class Agent extends EventEmitter {
           };
 
           this.emit('tool_start', toolCall);
+          await this.hooksManager?.fire('tool:before', { sessionId, toolName: tc.function.name });
           const startedAt = Date.now();
 
           // Check approval if needed
@@ -242,6 +346,7 @@ export class Agent extends EventEmitter {
                 isError: true,
               };
               this.emit('tool_end', toolCall, deniedResult, Date.now() - startedAt);
+              await this.hooksManager?.fire('tool:denied', { sessionId, toolName: tc.function.name });
               this.messages.push({
                 role: 'tool',
                 content: deniedResult.content,
@@ -259,6 +364,7 @@ export class Agent extends EventEmitter {
           };
 
           this.emit('tool_end', toolCall, toolResult, Date.now() - startedAt);
+          await this.hooksManager?.fire('tool:after', { sessionId, toolName: tc.function.name });
 
           this.messages.push({
             role: 'tool',
@@ -270,11 +376,13 @@ export class Agent extends EventEmitter {
 
       // Max iterations reached
       this.emit('done', 'max_iterations', '[max iterations reached]');
+      await this.hooksManager?.fire('agent:max_iterations', { sessionId });
       return '[max iterations reached]';
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err));
       this.emit('error', error);
       this.emit('done', 'error', error.message);
+      await this.hooksManager?.fire('session:error', { sessionId, error: error.message });
       throw error;
     } finally {
       this.abortController = null;

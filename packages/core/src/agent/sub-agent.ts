@@ -20,6 +20,23 @@ import { providerRegistry } from '../provider/registry.js';
 import { createDefaultTools } from '../tools/index.js';
 
 // ---------------------------------------------------------------------------
+// SharedContext
+// ---------------------------------------------------------------------------
+
+export class SharedContext {
+  private store = new Map<string, unknown>();
+
+  set(key: string, value: unknown): void { this.store.set(key, value); }
+  get(key: string): unknown | undefined { return this.store.get(key); }
+  has(key: string): boolean { return this.store.has(key); }
+  delete(key: string): boolean { return this.store.delete(key); }
+  keys(): string[] { return [...this.store.keys()]; }
+  toJSON(): Record<string, unknown> {
+    return Object.fromEntries(this.store);
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Public types
 // ---------------------------------------------------------------------------
 
@@ -52,6 +69,8 @@ export interface SubAgentManagerEvents {
   finished: [result: SubAgentResult];
   /** Fired when the concurrency limit is hit and a task is queued. */
   queued: [task: string, queueLength: number];
+  /** Fired when a sub-agent sends a message to another agent. */
+  message: [fromId: string, toId: string, content: string];
 }
 
 export interface SubAgentManager {
@@ -73,6 +92,9 @@ export class SubAgentManager extends EventEmitter {
   private readonly maxConcurrent: number;
   private readonly parentConfig: AgentConfig;
   private readonly parentProviderConfig: ProviderConfig;
+
+  /** Shared context accessible by all agents in this session. */
+  readonly sharedContext = new SharedContext();
 
   /** Currently running sub-agents (id → Agent). */
   private running = new Map<string, Agent>();
@@ -148,6 +170,11 @@ export class SubAgentManager extends EventEmitter {
   /** Number of queued tasks waiting for a slot. */
   get queuedCount(): number {
     return this.queue.length;
+  }
+
+  /** Send a message from one agent to another, emitting the 'message' event. */
+  sendMessage(fromId: string, toId: string, content: string): void {
+    this.emit('message', fromId, toId, content);
   }
 
   /** Cancel all running sub-agents and clear the queue. */

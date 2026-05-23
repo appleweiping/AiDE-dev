@@ -25,6 +25,7 @@ interface SessionIndexEntry {
   model: string;
   createdAt: number;
   updatedAt: number;
+  parentId?: string;
 }
 
 export class SessionManager {
@@ -142,6 +143,35 @@ export class SessionManager {
     return true;
   }
 
+  /** Fork a session, optionally truncating its message history. */
+  async fork(
+    sessionId: string,
+    options?: { title?: string; truncateAfterMessageIndex?: number },
+  ): Promise<Session | null> {
+    const original = await this.get(sessionId);
+    if (!original) return null;
+
+    const now = Date.now();
+    const messages =
+      options?.truncateAfterMessageIndex !== undefined
+        ? original.messages.slice(0, options.truncateAfterMessageIndex + 1)
+        : [...original.messages];
+
+    const forked: Session = {
+      ...original,
+      id: randomUUID(),
+      title: options?.title ?? `${original.title} (fork)`,
+      parentId: original.id,
+      messages,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    await this.writeSession(forked);
+    await this.addToIndex(forked);
+    return forked;
+  }
+
   // -------------------------------------------------------------------------
   // Private helpers
   // -------------------------------------------------------------------------
@@ -202,5 +232,6 @@ function sessionToIndexEntry(session: Session): SessionIndexEntry {
     model: session.model,
     createdAt: session.createdAt,
     updatedAt: session.updatedAt,
+    ...(session.parentId ? { parentId: session.parentId } : {}),
   };
 }

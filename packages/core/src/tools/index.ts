@@ -14,6 +14,8 @@ export { powershellTool } from './powershell.js';
 export { nodeReplTool } from './node-repl.js';
 export { cronTool } from './cron.js';
 export { askUserTool } from './ask-user.js';
+export { createEnterPlanModeTool } from './enter-plan-mode.js';
+export { createExitPlanModeTool } from './exit-plan-mode.js';
 
 import { ToolRegistry, toolRegistry } from './registry.js';
 import { fileReadTool } from './file-read.js';
@@ -30,7 +32,10 @@ import { powershellTool } from './powershell.js';
 import { nodeReplTool } from './node-repl.js';
 import { cronTool } from './cron.js';
 import { askUserTool } from './ask-user.js';
+import { createEnterPlanModeTool } from './enter-plan-mode.js';
+import { createExitPlanModeTool } from './exit-plan-mode.js';
 import type { RegisteredTool, ToolResult } from './registry.js';
+import type { PlanManager } from '../plan/manager.js';
 
 function wrapTool(tool: { definition: any; execute: (...args: any[]) => Promise<string> }): RegisteredTool {
   return {
@@ -46,7 +51,14 @@ function wrapTool(tool: { definition: any; execute: (...args: any[]) => Promise<
   };
 }
 
-export function registerBuiltinTools(): void {
+function wrapPlanTool(tool: { name: string; description: string; parameters: Record<string, unknown>; execute: (args: Record<string, unknown>) => Promise<ToolResult> }): RegisteredTool {
+  return {
+    definition: { name: tool.name, description: tool.description, parameters: tool.parameters },
+    handler: tool.execute.bind(tool),
+  };
+}
+
+export function registerBuiltinTools(planManager?: PlanManager): void {
   toolRegistry.registerTool(fileReadTool);
   toolRegistry.registerTool(fileWriteTool);
   toolRegistry.registerTool(fileEditTool);
@@ -63,9 +75,13 @@ export function registerBuiltinTools(): void {
   toolRegistry.registerTool(wrapTool(nodeReplTool));
   toolRegistry.registerTool(wrapTool(cronTool));
   toolRegistry.registerTool(wrapTool(askUserTool));
+  if (planManager) {
+    toolRegistry.registerTool(wrapPlanTool(createEnterPlanModeTool(planManager)));
+    toolRegistry.registerTool(wrapPlanTool(createExitPlanModeTool(planManager)));
+  }
 }
 
-export function createDefaultTools(_workingDirectory: string): ToolRegistry {
+export function createDefaultTools(_workingDirectory: string, planManager?: PlanManager): ToolRegistry {
   const registry = new ToolRegistry();
   registry.registerTool(fileReadTool);
   registry.registerTool(fileWriteTool);
@@ -83,5 +99,9 @@ export function createDefaultTools(_workingDirectory: string): ToolRegistry {
   registry.registerTool(wrapTool(nodeReplTool));
   registry.registerTool(wrapTool(cronTool));
   registry.registerTool(wrapTool(askUserTool));
+  if (planManager) {
+    registry.registerTool(wrapPlanTool(createEnterPlanModeTool(planManager)));
+    registry.registerTool(wrapPlanTool(createExitPlanModeTool(planManager)));
+  }
   return registry;
 }

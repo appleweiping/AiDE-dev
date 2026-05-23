@@ -36,6 +36,26 @@
 
 ---
 
+## 下载
+
+<p align="center">
+
+| 平台 | 安装包 | 便携版 |
+|---|---|---|
+| **Windows x64** | [AiDE-0.1.0-x64-setup.exe](https://github.com/appleweiping/AiDE-dev/releases/latest/download/AiDE-0.1.0-x64-setup.exe) | [AiDE-0.1.0-x64.zip](https://github.com/appleweiping/AiDE-dev/releases/latest/download/AiDE-0.1.0-x64.zip) |
+| **Windows arm64** | [AiDE-0.1.0-arm64-setup.exe](https://github.com/appleweiping/AiDE-dev/releases/latest/download/AiDE-0.1.0-arm64-setup.exe) | [AiDE-0.1.0-arm64.zip](https://github.com/appleweiping/AiDE-dev/releases/latest/download/AiDE-0.1.0-arm64.zip) |
+| **macOS (Apple Silicon)** | [AiDE-0.1.0-aarch64.dmg](https://github.com/appleweiping/AiDE-dev/releases/latest/download/AiDE-0.1.0-aarch64.dmg) | — |
+| **macOS (Intel)** | [AiDE-0.1.0-x64.dmg](https://github.com/appleweiping/AiDE-dev/releases/latest/download/AiDE-0.1.0-x64.dmg) | — |
+| **Linux x64** | [AiDE-0.1.0-amd64.AppImage](https://github.com/appleweiping/AiDE-dev/releases/latest/download/AiDE-0.1.0-amd64.AppImage) | [AiDE-0.1.0-amd64.deb](https://github.com/appleweiping/AiDE-dev/releases/latest/download/AiDE-0.1.0-amd64.deb) |
+| **Linux arm64** | [AiDE-0.1.0-arm64.AppImage](https://github.com/appleweiping/AiDE-dev/releases/latest/download/AiDE-0.1.0-arm64.AppImage) | [AiDE-0.1.0-arm64.deb](https://github.com/appleweiping/AiDE-dev/releases/latest/download/AiDE-0.1.0-arm64.deb) |
+| **CLI (npm)** | `npm install -g @aide-dev/cli` | — |
+
+</p>
+
+> 所有版本均在 [GitHub Releases](https://github.com/appleweiping/AiDE-dev/releases) 页面。桌面应用有新版本时会自动提示更新。
+
+---
+
 ## AiDE 是什么？
 
 AiDE 是一个开源桌面编程智能体，将 Claude Code 和 Codex 的能力带到国产大模型生态。基于轻量级 Tauri 外壳（约 5 MB）原生运行于 Windows、macOS 和 Linux，支持接入 DeepSeek、通义千问、智谱 GLM、Kimi、豆包、MiniMax 或任何 OpenAI 兼容 API。完整的智能体循环——文件编辑、Shell 执行、网络搜索、Git 操作、MCP 工具等——全部在本地运行，三级权限系统让你始终掌控全局。

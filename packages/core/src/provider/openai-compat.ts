@@ -41,6 +41,7 @@ export abstract class OpenAICompatProvider implements LLMProvider {
   supportsToolUse(): boolean { return true; }
   supportsThinking(): boolean { return false; }
   supportsVision(): boolean { return false; }
+  supportsPromptCaching(): boolean { return false; }
 
   // -------------------------------------------------------------------------
   // Non-streaming complete
@@ -141,6 +142,14 @@ export abstract class OpenAICompatProvider implements LLMProvider {
               inputTokens: chunk.usage.prompt_tokens ?? 0,
               outputTokens: chunk.usage.completion_tokens ?? 0,
             };
+            if (chunk.usage.cache_read_input_tokens !== undefined ||
+                chunk.usage.cache_creation_input_tokens !== undefined) {
+              yield {
+                type: 'cache_stats',
+                cacheReadTokens: chunk.usage.cache_read_input_tokens ?? 0,
+                cacheCreationTokens: chunk.usage.cache_creation_input_tokens ?? 0,
+              };
+            }
           }
 
           const choice = chunk.choices?.[0];
@@ -216,8 +225,11 @@ export abstract class OpenAICompatProvider implements LLMProvider {
     return {
       'Authorization': `Bearer ${this.apiKey}`,
       'Content-Type': 'application/json',
+      ...this.buildCachingHeaders(),
     };
   }
+
+  protected buildCachingHeaders(): Record<string, string> { return {}; }
 
   protected buildRequestBody(request: CompletionRequest, stream: boolean): Record<string, unknown> {
     const body: Record<string, unknown> = {
@@ -248,6 +260,25 @@ export abstract class OpenAICompatProvider implements LLMProvider {
     // Forward any extra provider-specific params
     if (request.extra) {
       Object.assign(body, request.extra);
+    }
+
+    // Prompt caching — add cache_control to last system message and last tool
+    if (this.supportsPromptCaching()) {
+      const messages = body.messages as Array<Record<string, unknown>>;
+      if (messages) {
+        // Find last system message and mark it
+        for (let i = messages.length - 1; i >= 0; i--) {
+          if (messages[i].role === 'system') {
+            messages[i] = { ...messages[i], cache_control: { type: 'ephemeral' } };
+            break;
+          }
+        }
+      }
+      // Mark last tool definition
+      const tools = body.tools as Array<Record<string, unknown>> | undefined;
+      if (tools && tools.length > 0) {
+        tools[tools.length - 1] = { ...tools[tools.length - 1], cache_control: { type: 'ephemeral' } };
+      }
     }
 
     return body;
@@ -337,7 +368,7 @@ interface OpenAIStreamChunk {
     };
     finish_reason?: string | null;
   }>;
-  usage?: { prompt_tokens: number; completion_tokens: number };
+  usage?: { prompt_tokens: number; completion_tokens: number; cache_read_input_tokens?: number; cache_creation_input_tokens?: number };
 }
 
 // ---------------------------------------------------------------------------

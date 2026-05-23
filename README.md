@@ -36,6 +36,26 @@
 
 ---
 
+## Download
+
+<p align="center">
+
+| Platform | Installer | Portable |
+|---|---|---|
+| **Windows x64** | [AiDE-0.1.0-x64-setup.exe](https://github.com/appleweiping/AiDE-dev/releases/latest/download/AiDE-0.1.0-x64-setup.exe) | [AiDE-0.1.0-x64.zip](https://github.com/appleweiping/AiDE-dev/releases/latest/download/AiDE-0.1.0-x64.zip) |
+| **Windows arm64** | [AiDE-0.1.0-arm64-setup.exe](https://github.com/appleweiping/AiDE-dev/releases/latest/download/AiDE-0.1.0-arm64-setup.exe) | [AiDE-0.1.0-arm64.zip](https://github.com/appleweiping/AiDE-dev/releases/latest/download/AiDE-0.1.0-arm64.zip) |
+| **macOS (Apple Silicon)** | [AiDE-0.1.0-aarch64.dmg](https://github.com/appleweiping/AiDE-dev/releases/latest/download/AiDE-0.1.0-aarch64.dmg) | — |
+| **macOS (Intel)** | [AiDE-0.1.0-x64.dmg](https://github.com/appleweiping/AiDE-dev/releases/latest/download/AiDE-0.1.0-x64.dmg) | — |
+| **Linux x64** | [AiDE-0.1.0-amd64.AppImage](https://github.com/appleweiping/AiDE-dev/releases/latest/download/AiDE-0.1.0-amd64.AppImage) | [AiDE-0.1.0-amd64.deb](https://github.com/appleweiping/AiDE-dev/releases/latest/download/AiDE-0.1.0-amd64.deb) |
+| **Linux arm64** | [AiDE-0.1.0-arm64.AppImage](https://github.com/appleweiping/AiDE-dev/releases/latest/download/AiDE-0.1.0-arm64.AppImage) | [AiDE-0.1.0-arm64.deb](https://github.com/appleweiping/AiDE-dev/releases/latest/download/AiDE-0.1.0-arm64.deb) |
+| **CLI (npm)** | `npm install -g @aide-dev/cli` | — |
+
+</p>
+
+> All releases are on the [GitHub Releases](https://github.com/appleweiping/AiDE-dev/releases) page. The desktop app auto-updates when a new version is available.
+
+---
+
 ## What is AiDE?
 
 AiDE is an open-source desktop coding agent that brings the power of Claude Code and Codex to Chinese LLMs. It runs natively on Windows, macOS, and Linux via a lightweight Tauri shell (~5 MB), and connects to DeepSeek, Qwen, GLM, Kimi, Doubao, MiniMax, or any OpenAI-compatible API endpoint. The full agent loop — file editing, shell execution, web search, Git operations, MCP tools, and more — runs locally on your machine with a three-tier permission system that keeps you in control.

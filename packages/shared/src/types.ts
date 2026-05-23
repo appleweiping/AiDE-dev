@@ -37,6 +37,7 @@ export type StreamChunk =
   | { type: 'tool_call_delta'; id: string; argumentsDelta: string }
   | { type: 'tool_call_end'; id: string }
   | { type: 'usage'; inputTokens: number; outputTokens: number }
+  | { type: 'cache_stats'; cacheReadTokens: number; cacheCreationTokens: number }
   | { type: 'done'; stopReason: string };
 
 // Tool types
@@ -85,6 +86,7 @@ export interface Session {
   messages: Message[];
   createdAt: number;
   updatedAt: number;
+  parentId?: string;
 }
 
 // Agent config

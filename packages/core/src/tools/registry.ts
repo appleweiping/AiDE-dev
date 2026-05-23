@@ -18,11 +18,18 @@ export interface RegisteredTool {
 }
 
 // ---------------------------------------------------------------------------
+// Write-restricted tools (blocked in plan/read-only mode)
+// ---------------------------------------------------------------------------
+
+const WRITE_TOOLS = new Set(['file_write', 'file_edit', 'bash', 'powershell', 'notebook_edit']);
+
+// ---------------------------------------------------------------------------
 // ToolRegistry
 // ---------------------------------------------------------------------------
 
 export class ToolRegistry {
   private tools = new Map<string, RegisteredTool>();
+  private readOnly = false;
 
   /**
    * Register a tool. Overwrites any existing tool with the same name.
@@ -77,6 +84,14 @@ export class ToolRegistry {
       return { output: `Unknown tool: ${name}`, isError: true };
     }
 
+    // Block write tools when in read-only (plan) mode
+    if (this.readOnly && WRITE_TOOLS.has(name)) {
+      return {
+        output: 'Tool denied: AiDE is in Plan Mode (read-only). Exit plan mode first.',
+        isError: true,
+      };
+    }
+
     try {
       const result = await tool.handler(args);
       return {
@@ -92,6 +107,16 @@ export class ToolRegistry {
   /** Remove a tool by name. */
   unregister(name: string): boolean {
     return this.tools.delete(name);
+  }
+
+  /** Enable or disable read-only (plan) mode. */
+  setReadOnly(enabled: boolean): void {
+    this.readOnly = enabled;
+  }
+
+  /** Returns true when the registry is in read-only (plan) mode. */
+  isReadOnly(): boolean {
+    return this.readOnly;
   }
 }
 

@@ -25,6 +25,14 @@ export { grepTool } from './tools/grep.js';
 export { Agent } from './agent.js';
 export type { AgentEvents } from './agent.js';
 
+// Hooks
+export { HooksManager, globalHooksManager } from './hooks/manager.js';
+export type { HookEvent, HookDefinition, HookContext } from './hooks/manager.js';
+
+// Context Loader
+export { loadProjectContext, formatContextForPrompt } from './context-loader.js';
+export type { LoadedContext, ContextFile } from './context-loader.js';
+
 // Safety
 export { ApprovalManager, classifyCommand } from './safety/approval.js';
 export type { RiskLevel, RiskAssessment } from './safety/approval.js';
@@ -69,7 +77,7 @@ export type { Notification } from './notification/manager.js';
 export { compactContext, estimateTokenCount, estimateMessageTokens } from './session/compaction.js';
 
 // Sub-Agent
-export { SubAgentManager } from './agent/sub-agent.js';
+export { SubAgentManager, SharedContext } from './agent/sub-agent.js';
 export type {
   SubAgentConfig,
   SubAgentResult,
@@ -128,4 +136,61 @@ export type {
   PluginContext,
   LoadedPlugin,
 } from './plugin/manager.js';
+
+// Slash Commands
+export { SlashCommandRegistry, globalSlashRegistry } from './slash-commands/registry.js';
+export type {
+  SlashCommandDefinition,
+  SlashCommandContext,
+  SlashCommandResult,
+  SlashCommandHandler,
+  SlashCommandRegistryEvents,
+} from './slash-commands/registry.js';
+export { builtinCommands } from './slash-commands/builtins.js';
+
+// Docker Sandbox
+export { DockerSandbox, createSandboxedBashTool } from './safety/docker-sandbox.js';
+export type { SandboxOptions, SandboxResult } from './safety/docker-sandbox.js';
+
+// LSP Tools
+export { LspClient, createLspHoverTool, createLspDefinitionTool, createLspReferencesTool, LSP_PRESETS } from './tools/lsp.js';
+
+// Browser Automation
+export {
+  BrowserSession,
+  createBrowserNavigateTool,
+  createBrowserGetContentTool,
+  createBrowserClickTool,
+  createBrowserFillTool,
+  createBrowserScreenshotTool,
+  createBrowserEvaluateTool,
+  browserToolNames,
+} from './tools/browser.js';
+
+// Desktop Control
+export {
+  createScreenshotTool,
+  createMouseClickTool,
+  createKeyboardTypeTool,
+  createKeyPressTool,
+  createScrollTool,
+  desktopToolNames,
+} from './tools/desktop-control.js';
+
+// Voice / TTS
+export { VoiceManager, createTtsTool } from './tools/voice.js';
+export type { TtsOptions, TtsProvider } from './tools/voice.js';
+
+// Skills Library
+export { SkillsManager, createSkillTool, createSkillListTool } from './tools/skills.js';
+export type { Skill, SkillArg } from './tools/skills.js';
+
+// Telemetry (OpenTelemetry)
+export { Telemetry, globalTelemetry } from './telemetry/index.js';
+export type { TelemetryOptions, TelemetrySpan, AgentMetrics } from './telemetry/index.js';
+
+// A2A Protocol Server
+export { A2AServer } from './a2a/server.js';
+export type { A2AServerOptions, AgentCard, A2ATask } from './a2a/server.js';
+
 

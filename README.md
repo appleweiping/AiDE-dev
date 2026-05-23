@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/banner.svg" alt="AiDE Banner" width="800" />
+  <img src="assets/banner.png" alt="AiDE Banner" width="800" />
 </p>
 
 <h1 align="center">AiDE — AI Dev Environment</h1>
@@ -17,17 +17,17 @@
 </p>
 
 <p align="center">
-  <img src="assets/logos/deepseek.svg" height="32" alt="DeepSeek" />
+  <img src="assets/logos/deepseek.png" height="32" alt="DeepSeek" />
   &nbsp;&nbsp;
-  <img src="assets/logos/qwen.svg" height="32" alt="Qwen" />
+  <img src="assets/logos/qwen.png" height="32" alt="Qwen" />
   &nbsp;&nbsp;
-  <img src="assets/logos/glm.svg" height="32" alt="GLM" />
+  <img src="assets/logos/glm.png" height="32" alt="GLM" />
   &nbsp;&nbsp;
-  <img src="assets/logos/kimi.svg" height="32" alt="Kimi" />
+  <img src="assets/logos/kimi.png" height="32" alt="Kimi" />
   &nbsp;&nbsp;
-  <img src="assets/logos/doubao.svg" height="32" alt="Doubao" />
+  <img src="assets/logos/doubao.png" height="32" alt="Doubao" />
   &nbsp;&nbsp;
-  <img src="assets/logos/minimax.svg" height="32" alt="MiniMax" />
+  <img src="assets/logos/minimax.png" height="32" alt="MiniMax" />
 </p>
 
 ---

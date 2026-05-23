@@ -67,3 +67,65 @@ export type { Notification } from './notification/manager.js';
 
 // Context Compaction
 export { compactContext, estimateTokenCount, estimateMessageTokens } from './session/compaction.js';
+
+// Sub-Agent
+export { SubAgentManager } from './agent/sub-agent.js';
+export type {
+  SubAgentConfig,
+  SubAgentResult,
+  SubAgentManagerEvents,
+} from './agent/sub-agent.js';
+
+// Auto-Updater
+export { AutoUpdater } from './updater/index.js';
+export type {
+  UpdaterOptions,
+  UpdateInfo,
+  ReleaseAsset,
+  DownloadProgress,
+  AutoUpdaterEvents,
+} from './updater/index.js';
+
+// SQLite Session Store
+export { SqliteSessionStore } from './session/sqlite-store.js';
+export type { SessionIndexEntry as SqliteSessionIndexEntry } from './session/sqlite-store.js';
+
+// RAG / Local Indexing
+export { ProjectIndexer, indexProject, searchIndex } from './rag/indexer.js';
+export type { IndexOptions, IndexStats, SearchResult } from './rag/indexer.js';
+export { chunkFile, detectLanguage } from './rag/chunker.js';
+export type { Chunk, ChunkOptions } from './rag/chunker.js';
+export {
+  createIndex as createTfIdfIndex,
+  addDocument as addTfIdfDocument,
+  removeDocument as removeTfIdfDocument,
+  search as tfidfSearch,
+  tokenise,
+  serializeIndex,
+  deserializeIndex,
+} from './rag/tfidf.js';
+export type {
+  TfIdfDocument,
+  TfIdfIndex,
+  SearchHit,
+  SerializedIndex,
+} from './rag/tfidf.js';
+
+// Plugin Marketplace
+export { PluginMarketplace, getMarketplace } from './plugin/marketplace.js';
+export type {
+  PluginInfo,
+  PluginCategory,
+  MarketplaceOptions,
+  InstallResult,
+  UpdateInfo as PluginUpdateInfo,
+} from './plugin/marketplace.js';
+
+// Plugin Manager
+export { PluginManager } from './plugin/manager.js';
+export type {
+  PluginManifest,
+  PluginContext,
+  LoadedPlugin,
+} from './plugin/manager.js';
+

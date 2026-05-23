@@ -29,6 +29,11 @@ import { toolRegistry } from './tools/registry.js';
 import { registerBuiltinTools } from './tools/index.js';
 import { ApprovalManager } from './safety/approval.js';
 import { SessionManager } from './session/manager.js';
+import { McpManager } from './mcp/manager.js';
+import type { McpServerConfig } from './mcp/client.js';
+import { GitOperations } from './git/operations.js';
+import { SubAgentManager } from './agent/sub-agent.js';
+import { AutoUpdater } from './updater/index.js';
 
 // ---------------------------------------------------------------------------
 // JSON-RPC types
@@ -60,17 +65,33 @@ interface CoreEvent {
 export class IpcServer {
   private sessionManager: SessionManager;
   private approvalManager: ApprovalManager;
+  private mcpManager: McpManager;
+  private updater: AutoUpdater;
   private activeAgent: Agent | null = null;
   private activeSessionId: string | null = null;
 
   constructor(sessionsDir: string) {
     this.sessionManager = new SessionManager(sessionsDir);
     this.approvalManager = new ApprovalManager('safe');
+    this.mcpManager = new McpManager();
+    this.updater = new AutoUpdater({ owner: 'aide-dev', repo: 'aide' });
 
     // Forward approval requests to the UI
     this.approvalManager.on('approval_request', (request) => {
       this.sendEvent('approval_request', request);
     });
+
+    // Forward MCP server events to the UI
+    this.mcpManager.on('serverExit', (data) => this.sendEvent('mcp.serverExit', data));
+    this.mcpManager.on('serverStderr', (data) => this.sendEvent('mcp.serverStderr', data));
+    this.mcpManager.on('connected', (name) => this.sendEvent('mcp.connected', { name }));
+    this.mcpManager.on('disconnected', (name) => this.sendEvent('mcp.disconnected', { name }));
+
+    // Forward updater events to the UI
+    this.updater.on('update-available', (info) => this.sendEvent('updater.updateAvailable', info));
+    this.updater.on('download-progress', (progress) => this.sendEvent('updater.downloadProgress', progress));
+    this.updater.on('update-ready', (payload) => this.sendEvent('updater.updateReady', payload));
+    this.updater.on('no-update', (payload) => this.sendEvent('updater.noUpdate', payload));
   }
 
   async start(): Promise<void> {
@@ -317,6 +338,190 @@ export class IpcServer {
         if (!name) return this.sendError(request.id, -32602, 'name is required');
         const result = await toolRegistry.execute(name, args);
         return this.sendResult(request.id, result);
+      }
+
+      // --- MCP methods ---
+      case 'mcp.connect': {
+        const config = params as McpServerConfig;
+        if (!config?.name || !config?.command) {
+          return this.sendError(request.id, -32602, 'name and command are required');
+        }
+        const status = await this.mcpManager.connect(config);
+        return this.sendResult(request.id, status);
+      }
+
+      case 'mcp.disconnect': {
+        const name = String(params.name ?? '');
+        if (!name) return this.sendError(request.id, -32602, 'name is required');
+        await this.mcpManager.disconnect(name);
+        return this.sendResult(request.id, { disconnected: true });
+      }
+
+      case 'mcp.list': {
+        return this.sendResult(request.id, this.mcpManager.getStatus());
+      }
+
+      case 'mcp.callTool': {
+        const serverName = String(params.server ?? '');
+        const toolName = String(params.tool ?? '');
+        const toolArgs = (params.args ?? {}) as Record<string, unknown>;
+        if (!serverName || !toolName) {
+          return this.sendError(request.id, -32602, 'server and tool are required');
+        }
+        const output = await this.mcpManager.callTool(serverName, toolName, toolArgs);
+        return this.sendResult(request.id, { output });
+      }
+
+      // --- Git methods ---
+      case 'git.status': {
+        const cwd = String(params.cwd ?? process.cwd());
+        const git = new GitOperations(cwd);
+        const output = await git.status();
+        return this.sendResult(request.id, { output });
+      }
+
+      case 'git.branch': {
+        const cwd = String(params.cwd ?? process.cwd());
+        const git = new GitOperations(cwd);
+        const output = await git.branch();
+        return this.sendResult(request.id, { branch: output });
+      }
+
+      case 'git.log': {
+        const cwd = String(params.cwd ?? process.cwd());
+        const count = typeof params.count === 'number' ? params.count : 10;
+        const git = new GitOperations(cwd);
+        const output = await git.log(count);
+        return this.sendResult(request.id, { output });
+      }
+
+      case 'git.diff': {
+        const cwd = String(params.cwd ?? process.cwd());
+        const staged = Boolean(params.staged ?? false);
+        const git = new GitOperations(cwd);
+        const output = await git.diff(staged);
+        return this.sendResult(request.id, { output });
+      }
+
+      case 'git.commit': {
+        const cwd = String(params.cwd ?? process.cwd());
+        const message = String(params.message ?? '');
+        if (!message) return this.sendError(request.id, -32602, 'message is required');
+        const git = new GitOperations(cwd);
+        // Stage all tracked changes if files not specified
+        const files = Array.isArray(params.files) ? (params.files as string[]) : ['.'];
+        await git.add(files);
+        const output = await git.commit(message);
+        return this.sendResult(request.id, { output });
+      }
+
+      case 'git.push': {
+        const cwd = String(params.cwd ?? process.cwd());
+        const remote = String(params.remote ?? 'origin');
+        const branch = params.branch ? String(params.branch) : undefined;
+        const git = new GitOperations(cwd);
+        const output = await git.push(remote, branch);
+        return this.sendResult(request.id, { output });
+      }
+
+      case 'git.createBranch': {
+        const cwd = String(params.cwd ?? process.cwd());
+        const name = String(params.name ?? '');
+        if (!name) return this.sendError(request.id, -32602, 'name is required');
+        const git = new GitOperations(cwd);
+        const output = await git.createBranch(name);
+        return this.sendResult(request.id, { output });
+      }
+
+      // --- Sub-agent methods ---
+      case 'agent.spawnSub': {
+        const task = String(params.task ?? '');
+        if (!task) return this.sendError(request.id, -32602, 'task is required');
+
+        if (!this.activeAgent) {
+          return this.sendError(request.id, -32603, 'No active agent session to spawn sub-agent from');
+        }
+
+        // Retrieve the active session's provider config
+        const sessionId = this.activeSessionId;
+        if (!sessionId) {
+          return this.sendError(request.id, -32603, 'No active session');
+        }
+        const session = await this.sessionManager.get(sessionId);
+        if (!session) {
+          return this.sendError(request.id, -32602, `Session not found: ${sessionId}`);
+        }
+
+        const providerConfig = params.provider as ProviderConfig | undefined;
+        const agentConfig = params.config as Partial<AgentConfig> | undefined;
+        const maxConcurrent = typeof params.maxConcurrent === 'number' ? params.maxConcurrent : 3;
+
+        const parentProviderConfig: ProviderConfig = providerConfig ?? {
+          id: session.providerId,
+          name: session.providerId,
+          baseUrl: '',
+          apiKey: '',
+          model: session.model,
+        };
+
+        const parentAgentConfig: AgentConfig = {
+          provider: parentProviderConfig,
+          maxIterations: 50,
+          thinkingEnabled: false,
+          thinkingEffort: 'medium',
+          permissionMode: 'safe',
+          workingDirectory: session.workingDirectory,
+        };
+
+        const manager = new SubAgentManager(parentAgentConfig, parentProviderConfig, maxConcurrent);
+
+        // Forward sub-agent events to the UI
+        manager.on('spawned', (id, subTask) =>
+          this.sendEvent('agent.subSpawned', { parentSessionId: sessionId, id, task: subTask }),
+        );
+        manager.on('content', (id, delta) =>
+          this.sendEvent('agent.subContent', { id, delta }),
+        );
+        manager.on('finished', (result) =>
+          this.sendEvent('agent.subFinished', { parentSessionId: sessionId, ...result }),
+        );
+
+        // Acknowledge immediately, run async
+        this.sendResult(request.id, { started: true, task });
+
+        manager.spawn(task, agentConfig).then((reply) => {
+          this.sendEvent('agent.subReply', { parentSessionId: sessionId, task, reply });
+        }).catch((err: unknown) => {
+          const message = err instanceof Error ? err.message : String(err);
+          this.sendEvent('agent.subError', { parentSessionId: sessionId, task, error: message });
+        });
+
+        return;
+      }
+
+      // --- Updater methods ---
+      case 'updater.check': {
+        // Run async, result comes via events
+        this.sendResult(request.id, { checking: true });
+        this.updater.checkForUpdates().catch((err: unknown) => {
+          const message = err instanceof Error ? err.message : String(err);
+          this.sendEvent('updater.error', { error: message });
+        });
+        return;
+      }
+
+      case 'updater.download': {
+        const version = String(params.version ?? '');
+        const assetUrl = params.assetUrl ? String(params.assetUrl) : undefined;
+        if (!version) return this.sendError(request.id, -32602, 'version is required');
+
+        // Run async, progress comes via events
+        this.sendResult(request.id, { downloading: true, version });
+        this.updater.downloadUpdate(version, assetUrl).catch((err: unknown) => {
+          const message = err instanceof Error ? err.message : String(err);
+          this.sendEvent('updater.error', { error: message });
+        });
+        return;
       }
 
       default:

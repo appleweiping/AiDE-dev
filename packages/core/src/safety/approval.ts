@@ -78,6 +78,12 @@ export class ApprovalManager extends EventEmitter {
   private permanentlyApproved = new Set<string>();
   /** Pending approval promises keyed by request id */
   private pending = new Map<string, (approved: boolean) => void>();
+  /**
+   * Ask mode: when true, every tool call (including safe ones) emits an
+   * approval_request event. This is the REPL /mode ask behaviour — it is
+   * orthogonal to the permission mode (safe/trusted/locked).
+   */
+  private _askMode = false;
 
   constructor(mode: PermissionMode = 'safe') {
     super();
@@ -92,33 +98,48 @@ export class ApprovalManager extends EventEmitter {
     this.mode = mode;
   }
 
+  /** Enable or disable ask mode (confirm every tool call). */
+  setAskMode(enabled: boolean): void {
+    this._askMode = enabled;
+  }
+
+  isAskMode(): boolean {
+    return this._askMode;
+  }
+
   /**
    * Request approval for a tool call.
    * - 'locked' mode: always blocks (returns false)
-   * - 'trusted' mode: always approves (returns true)
+   * - 'trusted' mode: always approves (returns true), unless ask mode is on
    * - 'safe' mode: classifies the call and emits approval_request if needed
+   * - ask mode (any permission mode): every tool call emits approval_request
    *
    * Returns true if the call should proceed, false if denied.
    */
   async requestApproval(toolCall: ToolCall, signal?: AbortSignal): Promise<boolean> {
     if (this.mode === 'locked') return false;
-    if (this.mode === 'trusted') return true;
 
-    // Check permanent approvals
-    if (this.permanentlyApproved.has(toolCall.name)) return true;
+    // Check permanent approvals (skip in ask mode — ask mode always prompts)
+    if (!this._askMode && this.permanentlyApproved.has(toolCall.name)) return true;
 
     // Classify the tool call
     const assessment = this.assessToolCall(toolCall);
 
     if (assessment.level === 'blocked') return false;
-    if (assessment.level === 'safe') return true;
 
-    // needs_approval — emit request and wait for response
+    // In ask mode: every non-blocked call needs approval
+    // In trusted mode without ask: always approve safe/needs_approval
+    if (!this._askMode) {
+      if (this.mode === 'trusted') return true;
+      if (assessment.level === 'safe') return true;
+    }
+
+    // needs_approval (or ask mode) — emit request and wait for response
     const requestId = randomUUID().slice(0, 8);
     const request: ApprovalRequest = {
       id: requestId,
       toolName: toolCall.name,
-      description: assessment.reason,
+      description: this._askMode ? `ask mode: confirm ${toolCall.name}` : assessment.reason,
       command: typeof toolCall.arguments.command === 'string' ? toolCall.arguments.command : undefined,
       filePath: typeof toolCall.arguments.path === 'string' ? toolCall.arguments.path : undefined,
       timestamp: Date.now(),

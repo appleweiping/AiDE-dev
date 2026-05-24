@@ -16,6 +16,8 @@ export { cronTool } from './cron.js';
 export { askUserTool } from './ask-user.js';
 export { createEnterPlanModeTool } from './enter-plan-mode.js';
 export { createExitPlanModeTool } from './exit-plan-mode.js';
+export { handleTodoCommand, todoAdd, todoList, todoDone, todoStart, todoRemove, todoClear, formatTodoList, setTodoStorePath } from './todo.js';
+export type { TodoItem, TodoStatus, TodoPriority } from './todo.js';
 
 import { ToolRegistry, toolRegistry } from './registry.js';
 import { fileReadTool } from './file-read.js';

@@ -42,17 +42,17 @@
 
 | 平台 | 安装包 | 便携版 |
 |---|---|---|
-| **Windows x64** | [AiDE-0.1.0-x64-setup.exe](https://github.com/appleweiping/AiDE-dev/releases/latest/download/AiDE-0.1.0-x64-setup.exe) | [AiDE-0.1.0-x64.zip](https://github.com/appleweiping/AiDE-dev/releases/latest/download/AiDE-0.1.0-x64.zip) |
-| **Windows arm64** | [AiDE-0.1.0-arm64-setup.exe](https://github.com/appleweiping/AiDE-dev/releases/latest/download/AiDE-0.1.0-arm64-setup.exe) | [AiDE-0.1.0-arm64.zip](https://github.com/appleweiping/AiDE-dev/releases/latest/download/AiDE-0.1.0-arm64.zip) |
-| **macOS (Apple Silicon)** | [AiDE-0.1.0-aarch64.dmg](https://github.com/appleweiping/AiDE-dev/releases/latest/download/AiDE-0.1.0-aarch64.dmg) | — |
-| **macOS (Intel)** | [AiDE-0.1.0-x64.dmg](https://github.com/appleweiping/AiDE-dev/releases/latest/download/AiDE-0.1.0-x64.dmg) | — |
-| **Linux x64** | [AiDE-0.1.0-amd64.AppImage](https://github.com/appleweiping/AiDE-dev/releases/latest/download/AiDE-0.1.0-amd64.AppImage) | [AiDE-0.1.0-amd64.deb](https://github.com/appleweiping/AiDE-dev/releases/latest/download/AiDE-0.1.0-amd64.deb) |
-| **Linux arm64** | [AiDE-0.1.0-arm64.AppImage](https://github.com/appleweiping/AiDE-dev/releases/latest/download/AiDE-0.1.0-arm64.AppImage) | [AiDE-0.1.0-arm64.deb](https://github.com/appleweiping/AiDE-dev/releases/latest/download/AiDE-0.1.0-arm64.deb) |
+| **Windows x64** | [AiDE-0.1.0-x64-setup.exe](https://github.com/appleweiping/AIDE_DEV/releases/latest/download/AiDE-0.1.0-x64-setup.exe) | [AiDE-0.1.0-x64.zip](https://github.com/appleweiping/AIDE_DEV/releases/latest/download/AiDE-0.1.0-x64.zip) |
+| **Windows arm64** | [AiDE-0.1.0-arm64-setup.exe](https://github.com/appleweiping/AIDE_DEV/releases/latest/download/AiDE-0.1.0-arm64-setup.exe) | [AiDE-0.1.0-arm64.zip](https://github.com/appleweiping/AIDE_DEV/releases/latest/download/AiDE-0.1.0-arm64.zip) |
+| **macOS (Apple Silicon)** | [AiDE-0.1.0-aarch64.dmg](https://github.com/appleweiping/AIDE_DEV/releases/latest/download/AiDE-0.1.0-aarch64.dmg) | — |
+| **macOS (Intel)** | [AiDE-0.1.0-x64.dmg](https://github.com/appleweiping/AIDE_DEV/releases/latest/download/AiDE-0.1.0-x64.dmg) | — |
+| **Linux x64** | [AiDE-0.1.0-amd64.AppImage](https://github.com/appleweiping/AIDE_DEV/releases/latest/download/AiDE-0.1.0-amd64.AppImage) | [AiDE-0.1.0-amd64.deb](https://github.com/appleweiping/AIDE_DEV/releases/latest/download/AiDE-0.1.0-amd64.deb) |
+| **Linux arm64** | [AiDE-0.1.0-arm64.AppImage](https://github.com/appleweiping/AIDE_DEV/releases/latest/download/AiDE-0.1.0-arm64.AppImage) | [AiDE-0.1.0-arm64.deb](https://github.com/appleweiping/AIDE_DEV/releases/latest/download/AiDE-0.1.0-arm64.deb) |
 | **CLI (npm)** | `npm install -g @aide-dev/cli` | — |
 
 </p>
 
-> 所有版本均在 [GitHub Releases](https://github.com/appleweiping/AiDE-dev/releases) 页面。桌面应用有新版本时会自动提示更新。
+> 所有版本均在 [GitHub Releases](https://github.com/appleweiping/AIDE_DEV/releases) 页面。桌面应用有新版本时会自动提示更新。
 
 ---
 
@@ -184,7 +184,7 @@ AiDE 采用三级权限模型：
 
 ```bash
 # 克隆仓库
-git clone https://github.com/AiDE-dev/aide.git
+git clone https://github.com/appleweiping/AIDE_DEV.git
 cd aide
 
 # 安装所有工作区依赖
@@ -655,7 +655,7 @@ ntfy_topic = "my-aide-abc123"   # 选一个难以猜测的名称
 | 平台 | 链接 |
 |---|---|
 | iOS | App Store（即将上线） |
-| Android | Google Play（即将上线）/ [APK](https://github.com/appleweiping/AiDE-dev/releases/latest) |
+| Android | Google Play（即将上线）/ [APK](https://github.com/appleweiping/AIDE_DEV/releases/latest) |
 
 手机 App 源码在 `packages/mobile/` 目录——使用 Expo 自行构建：
 

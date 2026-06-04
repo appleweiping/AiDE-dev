@@ -198,9 +198,11 @@
     "@aide/core": "workspace:*"
   },
   "devDependencies": {
+    "eslint": "^9.0.0",
     "@types/node": "^20.0.0",
     "@types/vscode": "^1.85.0",
     "@vscode/vsce": "^2.22.0",
+    "typescript-eslint": "^8.0.0",
     "typescript": "^5.8.0"
   }
 }

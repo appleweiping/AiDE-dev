@@ -75,7 +75,6 @@ export default function PlanMode({ plan, onApprove, onRequestChanges }: PlanMode
   const progressPct = totalSteps > 0 ? (completedSteps / totalSteps) * 100 : 0;
 
   const currentPhaseIdx = phaseIndex(plan.phase);
-  const phaseProgressPct = ((currentPhaseIdx + 1) / PHASE_ORDER.length) * 100;
 
   const handleRequestChanges = () => {
     if (feedback.trim()) {

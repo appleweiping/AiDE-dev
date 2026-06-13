@@ -47,12 +47,9 @@ function computeDiff(oldText: string, newText: string): DiffLine[] {
     }
   }
 
-  // Backtrack to build diff
-  const result: DiffLine[] = [];
+  // Backtrack to build diff (line numbers are tracked inline via i/j below)
   let i = m;
   let j = n;
-  let oldLineNo = m;
-  let newLineNo = n;
 
   const stack: DiffLine[] = [];
 

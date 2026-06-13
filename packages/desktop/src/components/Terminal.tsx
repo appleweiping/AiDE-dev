@@ -10,15 +10,15 @@ export interface TerminalProps {
 // The terminal is only initialized when first made visible.
 
 let xtermLoaded = false;
-let Terminal_: typeof import('@xterm/xterm').Terminal | null = null;
-let FitAddon_: typeof import('@xterm/addon-fit').FitAddon | null = null;
+let Terminal_: typeof import('xterm').Terminal | null = null;
+let FitAddon_: typeof import('xterm-addon-fit').FitAddon | null = null;
 
 async function loadXterm() {
   if (xtermLoaded) return;
   try {
     const [xtermMod, fitMod] = await Promise.all([
-      import('@xterm/xterm'),
-      import('@xterm/addon-fit'),
+      import('xterm'),
+      import('xterm-addon-fit'),
     ]);
     Terminal_ = xtermMod.Terminal;
     FitAddon_ = fitMod.FitAddon;
@@ -59,8 +59,8 @@ const XTERM_THEME = {
 export default function Terminal({ visible }: TerminalProps) {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
-  const termRef = useRef<import('@xterm/xterm').Terminal | null>(null);
-  const fitRef = useRef<import('@xterm/addon-fit').FitAddon | null>(null);
+  const termRef = useRef<import('xterm').Terminal | null>(null);
+  const fitRef = useRef<import('xterm-addon-fit').FitAddon | null>(null);
   const initializedRef = useRef(false);
 
   // Initialize xterm when first made visible

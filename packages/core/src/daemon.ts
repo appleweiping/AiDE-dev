@@ -21,7 +21,7 @@ import { writeFile, readFile, unlink, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { createWriteStream, type WriteStream } from 'node:fs';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, timingSafeEqual } from 'node:crypto';
 import { SessionManager } from './session/manager.js';
 import { ApprovalManager } from './safety/approval.js';
 import { McpManager } from './mcp/manager.js';
@@ -41,6 +41,16 @@ const AIDE_DIR = join(homedir(), '.aide');
 const PID_FILE = join(AIDE_DIR, 'daemon.pid');
 const LOG_FILE = join(AIDE_DIR, 'daemon.log');
 const SESSIONS_DIR = join(AIDE_DIR, 'sessions');
+
+// Constant-time token comparison so the auth check can't be probed byte-by-byte
+// via response timing. Length is compared first (timingSafeEqual requires equal
+// lengths); a fixed-length token makes that disclosure harmless.
+function timingSafeEqualStr(a: string, b: string): boolean {
+  const ab = Buffer.from(a, 'utf8');
+  const bb = Buffer.from(b, 'utf8');
+  if (ab.length !== bb.length) return false;
+  return timingSafeEqual(ab, bb);
+}
 
 // ---------------------------------------------------------------------------
 // Logger
@@ -219,7 +229,7 @@ export class AideDaemon {
     // Auth handshake
     if (msg.method === 'auth') {
       const token = String((msg.params as Record<string, unknown>)?.token ?? '');
-      if (token === this.authToken) {
+      if (timingSafeEqualStr(token, this.authToken)) {
         client.authenticated = true;
         client.type = String((msg.params as Record<string, unknown>)?.clientType ?? 'unknown') as DaemonClient['type'];
         this.sendToClient(client, { jsonrpc: '2.0', id: msg.id, result: { authenticated: true, clientId: client.id } });

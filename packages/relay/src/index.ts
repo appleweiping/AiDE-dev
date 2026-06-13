@@ -45,7 +45,14 @@ interface RelayRoom {
 // ---------------------------------------------------------------------------
 
 const PORT = parseInt(process.env.PORT ?? '7433', 10);
-const HOST = process.env.HOST ?? '0.0.0.0';
+// Secure default: bind loopback only. The relay forwards a control channel to
+// the desktop daemon (which executes agent tool calls), so a default-open
+// 0.0.0.0 bind put that channel on every LAN interface. Opt into LAN exposure
+// explicitly via HOST=0.0.0.0 (or front it with Tailscale, as the header notes).
+const HOST = process.env.HOST ?? '127.0.0.1';
+// Reject guessable tokens used as room keys — the token is the only thing
+// gating who can join a desktop's room.
+const MIN_TOKEN_LEN = 24;
 const MAX_ROOMS = 100;
 const ROOM_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
@@ -96,6 +103,10 @@ wss.on('connection', (ws, req) => {
     ws.close(4001, 'Missing token');
     return;
   }
+  if (token.length < MIN_TOKEN_LEN) {
+    ws.close(4003, 'Token too short');
+    return;
+  }
 
   const clientId = randomUUID();
   const client: RelayClient = { id: clientId, ws, role, token, connectedAt: Date.now() };
@@ -104,11 +115,16 @@ wss.on('connection', (ws, req) => {
   const room = getOrCreateRoom(token);
 
   if (role === 'desktop') {
-    if (room.desktop) {
-      room.desktop.ws.close(4002, 'Replaced by new desktop connection');
+    // Do NOT silently evict a live desktop: a second 'desktop' connection on a
+    // known token would otherwise hijack the channel to the daemon. Only take
+    // over a slot whose previous socket is already gone (legitimate reconnect).
+    if (room.desktop && room.desktop.ws.readyState === WebSocket.OPEN) {
+      clients.delete(clientId);
+      ws.close(4004, 'Desktop already connected for this room');
+      return;
     }
     room.desktop = client;
-    console.log(`[RELAY] Desktop connected: ${clientId} token=${token.slice(0, 8)}...`);
+    console.log(`[RELAY] Desktop connected: ${clientId}`);
 
     // Notify all mobile clients that desktop is online
     for (const mobile of room.mobiles) {
@@ -118,7 +134,7 @@ wss.on('connection', (ws, req) => {
     }
   } else {
     room.mobiles.add(client);
-    console.log(`[RELAY] Mobile connected: ${clientId} token=${token.slice(0, 8)}...`);
+    console.log(`[RELAY] Mobile connected: ${clientId}`);
 
     // Notify desktop that a mobile client connected
     if (room.desktop?.ws.readyState === WebSocket.OPEN) {
@@ -188,4 +204,7 @@ wss.on('connection', (ws, req) => {
 httpServer.listen(PORT, HOST, () => {
   console.log(`[RELAY] AiDE Relay Server running on ws://${HOST}:${PORT}`);
   console.log(`[RELAY] Health check: http://${HOST}:${PORT}/health`);
+  if (HOST !== '127.0.0.1' && HOST !== 'localhost' && HOST !== '::1') {
+    console.warn(`[RELAY] WARNING: bound to ${HOST} (non-loopback) — the daemon control channel is reachable off-host. Ensure the token is strong and the network is trusted (e.g. Tailscale).`);
+  }
 });

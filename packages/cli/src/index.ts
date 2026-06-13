@@ -30,7 +30,7 @@ cli
       process.exit(1);
     }
 
-    const provider = registry.create({
+    const provider = registry.get({
       id: providerId,
       name: providerId,
       baseUrl: baseUrl || registry.getPreset(providerId)?.baseUrl || '',
@@ -56,9 +56,9 @@ cli
 
       agent.on('content', (delta: string) => process.stdout.write(delta));
       agent.on('reasoning', (delta: string) => process.stderr.write(`💭 ${delta}`));
-      agent.on('toolStart', (name: string) => process.stderr.write(`\n🔧 ${name}...\n`));
-      agent.on('toolEnd', (name: string, result: string, isError: boolean) => {
-        if (isError) process.stderr.write(`❌ ${name} failed\n`);
+      agent.on('tool_start', (call) => process.stderr.write(`\n🔧 ${call.name}...\n`));
+      agent.on('tool_end', (call, result) => {
+        if (result.isError) process.stderr.write(`❌ ${call.name} failed\n`);
       });
       agent.on('done', () => {
         process.stdout.write('\n');

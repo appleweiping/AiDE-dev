@@ -11,7 +11,7 @@
     }
   },
   "scripts": {
-    "build": "tsdown",
+    "build": "tsdown && tsc --emitDeclarationOnly --declaration",
     "dev": "tsdown --watch",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit"

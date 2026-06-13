@@ -134,11 +134,11 @@ export async function startRepl(provider: LLMProvider, options: ReplOptions): Pr
 
   agent.on('content', (delta: string) => process.stdout.write(delta));
   agent.on('reasoning', (delta: string) => process.stderr.write(`\x1b[2m${delta}\x1b[0m`));
-  agent.on('tool_start', (call) => process.stderr.write(`\n\x1b[36m⚙ ${call.name}\x1b[0m\n`));
-  agent.on('tool_end', (_call, result) => {
+  agent.on('tool_start', (call: { name: string }) => process.stderr.write(`\n\x1b[36m⚙ ${call.name}\x1b[0m\n`));
+  agent.on('tool_end', (_call: unknown, result: { isError: boolean }) => {
     if (result.isError) process.stderr.write(`\x1b[31m✗ error\x1b[0m\n`);
   });
-  agent.on('compacted', (before, after) => {
+  agent.on('compacted', (before: number, after: number) => {
     process.stderr.write(`\x1b[2m[context compacted: ${before} → ${after} messages]\x1b[0m\n`);
   });
   agent.on('error', (err: Error) => console.error(`\n\x1b[31mError: ${err.message}\x1b[0m`));
@@ -305,7 +305,7 @@ async function runWithMode(
     const blocks: Array<{ type: string; [key: string]: unknown }> = [];
     for (const imgPath of pendingImages) {
       try {
-        blocks.push(buildImageBlock(imgPath));
+        blocks.push(buildImageBlock(imgPath) as unknown as { type: string; [key: string]: unknown });
       } catch (err) {
         console.error(`\x1b[31m✗ Image error: ${(err as Error).message}\x1b[0m`);
       }

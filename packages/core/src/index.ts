@@ -12,7 +12,7 @@ export { OpenAICompatProvider } from './provider/openai-compat.js';
 export { ProviderRegistry, providerRegistry } from './provider/registry.js';
 
 // Tools
-export { ToolRegistry, toolRegistry, registerBuiltinTools } from './tools/index.js';
+export { ToolRegistry, toolRegistry, registerBuiltinTools, createDefaultTools } from './tools/index.js';
 export type { ToolResult, ToolHandler, RegisteredTool } from './tools/registry.js';
 export { fileReadTool } from './tools/file-read.js';
 export { fileWriteTool } from './tools/file-write.js';

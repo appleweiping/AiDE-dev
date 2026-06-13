@@ -31,8 +31,8 @@ const BLOCKED_PATTERNS: Array<[RegExp, string]> = [
 const APPROVAL_PATTERNS: Array<[RegExp, string]> = [
   [/\brm\b|\bdel\b|\brmdir\b|\bRemove-Item\b/i, 'delete command'],
   [/\bgit\s+(reset|clean|checkout|rebase)\b/i, 'history or working-tree rewrite'],
-  [/\b(mv|move|cp|copy|xcopy|robocopy|Set-Content|Out-File)\b|(^|[^>])>[^>]/i, 'file mutation or shell redirection'],
-  [/\b(npm|pnpm|yarn|bun)\s+(install|add|remove|publish)\b|\bpip\s+install\b/i, 'dependency or package registry operation'],
+  [/\b(mv|move|cp|copy|xcopy|robocopy|Set-Content|Add-Content|Out-File)\b|(^|[^>])>{1,2}/i, 'file mutation or shell redirection'],
+  [/\b(npm|pnpm|yarn|bun)\s+(install|add|remove|publish)\b|\b(uv\s+)?pip\s+install\b|\buv\s+(add|sync|install)\b/i, 'dependency or package registry operation'],
   [/\bgit\s+push\b.*(--force|-f|\+[^\s]+)/i, 'force push'],
   [/\bnpm\s+publish\b|\bpnpm\s+publish\b/i, 'package publish'],
   [/\b(curl|wget|iwr|Invoke-WebRequest)\b.*\|\s*(sh|bash|powershell|iex|Invoke-Expression)\b/i, 'downloaded script execution'],

@@ -370,7 +370,7 @@ export class IpcServer {
 
       // --- MCP methods ---
       case 'mcp.connect': {
-        const config = params as McpServerConfig;
+        const config = params as unknown as McpServerConfig;
         if (!config?.name || !config?.command) {
           return this.sendError(request.id, -32602, 'name and command are required');
         }
@@ -557,7 +557,7 @@ export class IpcServer {
 
       // --- Hooks methods ---
       case 'hooks.register': {
-        const hook = params as HookDefinition;
+        const hook = params as unknown as HookDefinition;
         if (!hook?.event || !hook?.command) {
           return this.sendError(request.id, -32602, 'event and command are required');
         }

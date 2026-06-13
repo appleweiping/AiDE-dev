@@ -1,4 +1,5 @@
-import type { ToolDefinition, ToolResult } from '@aide/shared';
+import type { ToolDefinition } from '@aide/shared';
+import type { ToolResult } from './registry.js';
 import type { PlanManager } from '../plan/manager.js';
 
 export function createEnterPlanModeTool(planManager: PlanManager): ToolDefinition & { execute: (args: Record<string, unknown>) => Promise<ToolResult> } {

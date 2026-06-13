@@ -247,7 +247,7 @@ export class AideDaemon {
     }
 
     // Delegate to the same dispatch logic as IpcServer
-    this.dispatch(client, msg as JsonRpcMessage).catch((err) => {
+    this.dispatch(client, msg as unknown as JsonRpcMessage).catch((err) => {
       logger.error(`Dispatch error: ${err.message}`);
       this.sendToClient(client, {
         jsonrpc: '2.0',
@@ -388,7 +388,7 @@ export class AideDaemon {
           type: 'mobile',
           authenticated: true,
         };
-        this.dispatch(relayClient, msg as JsonRpcMessage).catch((err) => {
+        this.dispatch(relayClient, msg as unknown as JsonRpcMessage).catch((err) => {
           logger.error(`Relay dispatch error: ${err.message}`);
         });
       } catch { /* ignore */ }

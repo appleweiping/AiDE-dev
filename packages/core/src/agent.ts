@@ -54,7 +54,9 @@ function estimateTokens(messages: ProviderMessage[]): number {
   let chars = 0;
   for (const m of messages) {
     if (typeof m.content === 'string') chars += m.content.length;
-    if (m.tool_calls) chars += JSON.stringify(m.tool_calls).length;
+    // tool_calls exists only on the 'assistant' variant of the ProviderMessage
+    // union — narrow with `in` before reading it.
+    if ('tool_calls' in m && m.tool_calls) chars += JSON.stringify(m.tool_calls).length;
   }
   return Math.ceil(chars / 4);
 }
